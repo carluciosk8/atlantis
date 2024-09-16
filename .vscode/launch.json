@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run MSX Fusion-C Project",
+            "type": "clr",
+            "request": "launch",
+            "program": "E:/openmsx-16.0-windows-vc-x64-bin/openmsx.exe",
+            "args": ["-machine", "Gradiente_Expert_GPC-1", "-cart", "build\\atlantis.rom"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "emulicious-debugger",
+            "request": "launch",
+            "name": "Launch in Emulicious",
+            "program": "${workspaceFolder}/build/atlantis.rom",
+            "port": 58870,
+            "stopOnEntry": true
+        },
+    ]
+}
