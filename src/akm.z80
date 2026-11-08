@@ -5,7 +5,7 @@
 include "song_playerconfig.asm"
 include "effects_playerconfig.asm"
 
-include "F:/msxdevenv/bin/ubox-msx-lib-master/src/mplayer/akm/akm_ubox.asm"
+include "/home/carlucio/Projects/ubox-msx-lib-1.2.1/src/mplayer/akm/akm_ubox.asm"
 
 songDisarkGenerateExternalLabel:
 include "song.asm"

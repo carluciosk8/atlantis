@@ -9,9 +9,11 @@ ROM_MAX := 8000
 
 OUTPUT := build
 
-RDEV_PATH := F:\msxdevenv\bin
+# RDEV_PATH := F:\msxdevenv\bin
 
-UBOX_PATH := $(RDEV_PATH)\ubox-msx-lib-master
+UBOX_PATH := /home/carlucio/Projects/ubox-msx-lib-1.1.9
+SDCC_PATH := /home/carlucio/sdcc-versions/sdcc-4.0.0/bin
+
 
 HDR = \
 	city.h\
@@ -47,12 +49,11 @@ SRC = \
 	main.c\
 
 RELS := $(patsubst %.c, $(OUTPUT)/%.rel, $(SRC)) $(OUTPUT)/akm.rel
-UBOX_LIBS := $(UBOX_PATH)\lib\ubox.lib $(UBOX_PATH)\lib\mplayer.lib
+UBOX_LIBS := $(UBOX_PATH)/lib/ubox.lib $(UBOX_PATH)/lib/mplayer.lib
 LIBS := -lubox -lmplayer
 
-SDCC_PATH := $(RDEV_PATH)\sdcc-4.0.0-x64\bin
-AS := $(SDCC_PATH)\sdasz80.exe
-CC := $(SDCC_PATH)\sdcc.exe
+AS := $(SDCC_PATH)/sdasz80
+CC := $(SDCC_PATH)/sdcc
 CFLAGS := -mz80 --Werror -I$(UBOX_PATH)/include -I. --fsigned-char --std-sdcc99 --opt-code-speed
 LDFLAGS := -L$(UBOX_PATH)/lib -L. --no-std-crt0# --fomit-frame-pointer
 
@@ -61,32 +62,32 @@ all: $(OUTPUT)/$(TARGET).rom
 	echo "Done !!!"
 
 openmsx: all
-	openmsx -carta $(OUTPUT)/$(TARGET).rom -machine msx1
+	openmsx -carta $(OUTPUT)/$(TARGET).rom
 
-src/tileset.h: data\tiles.png
-	python $(RDEV_PATH)\png2tiles.py -i tileset $< > $@
+src/tileset.h: assets/gfx/tiles.png
+	python $(UBOX_PATH)tools/png2tiles.py -i tileset $< > $@
 
 $(OUTPUT)/%.rel: src/%.c $(patsubst %.h, src/%.h, $(HDR))
-	@if not exist "$(OUTPUT)" mkdir $(OUTPUT)
+	@mkdir -p "$(OUTPUT)"
 	$(CC) $(CFLAGS) $(LDFLAGS) -c $< -o $@
 
 $(OUTPUT)/%.rel: src/%.z80
-	@if not exist "$(OUTPUT)" mkdir $(OUTPUT)
+	@mkdir -p "$(OUTPUT)"
 	$(AS) -g -o $@ $<
 
 $(OUTPUT)/akm.rel: src/akm.z80 src/song.asm src/effects.asm
-	$(UBOX_PATH)\tools\rasm\rasm.exe src/akm.z80 -o $(OUTPUT)/akm -s -sl -sq
-	$(RDEV_PATH)\Disark.exe --sourceProfile sdcc --symbolFile $(OUTPUT)/akm.sym --src16bitsValuesInHex --src8bitsValuesInHex --undocumentedOpcodesToBytes $(OUTPUT)/akm.bin $(OUTPUT)/akm_sdcc.asm
+	$(UBOX_PATH)/bin/rasm src/akm.z80 -o $(OUTPUT)/akm -s -sl -sq
+	disark --sourceProfile sdcc --symbolFile $(OUTPUT)/akm.sym --src16bitsValuesInHex --src8bitsValuesInHex --undocumentedOpcodesToBytes $(OUTPUT)/akm.bin $(OUTPUT)/akm_sdcc.asm
 	$(AS) -g -o $@ $(OUTPUT)/akm_sdcc.asm
 
 $(OUTPUT)/$(TARGET).rom: $(RELS) $(OUTPUT)/crt0.rel $(UBOX_LIBS)
-	@if not exist "$(OUTPUT)" mkdir $(OUTPUT)
+	@mkdir -p "$(OUTPUT)"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) --code-loc $(CODE) --data-loc $(DATA) $(OUTPUT)/crt0.rel $(RELS) -o $(OUTPUT)/$(TARGET).ihx
-	$(RDEV_PATH)\hex2bin.exe -e bin -p 00 -s 4000 -l $(ROM_MAX) $(OUTPUT)/$(TARGET).ihx
-#	$(RDEV_PATH)\hex2bin.exe -e bin $(OUTPUT)/$(TARGET).ihx
-	copy $(OUTPUT)\$(TARGET).bin $(OUTPUT)\$(TARGET).rom
+	$(UBOX_PATH)/bin/hex2bin -e bin -p 00 -s 4000 -l $(ROM_MAX) $(OUTPUT)/$(TARGET).ihx
+#	$(UBOX_PATH)/bin/hex2bin -e bin $(OUTPUT)/$(TARGET).ihx
+	cp $(OUTPUT)/$(TARGET).bin $(OUTPUT)/$(TARGET).rom
 
 clean:
-	rmdir /S /Q $(OUTPUT)
+	rm -rf $(OUTPUT)
 
 .PHONY: all clean
