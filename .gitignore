@@ -2,4 +2,6 @@
 *.rom
 *.rel
 build/
+out/
+emul/
 data/
