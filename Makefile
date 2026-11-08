@@ -65,7 +65,7 @@ openmsx: all
 	openmsx -carta $(OUTPUT)/$(TARGET).rom
 
 src/tileset.h: assets/gfx/tiles.png
-	python $(UBOX_PATH)tools/png2tiles.py -i tileset $< > $@
+	python $(UBOX_PATH)/tools/png2tiles.py -i tileset $< > $@
 
 $(OUTPUT)/%.rel: src/%.c $(patsubst %.h, src/%.h, $(HDR))
 	@mkdir -p "$(OUTPUT)"
