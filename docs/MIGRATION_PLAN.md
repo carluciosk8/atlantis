@@ -85,7 +85,7 @@ Legacy `Makefile` must keep working until step 8.
 | `ubox_set_mode(2)` | `void VDP_SetMode(const u8 mode);` — pass `VDP_MODE_SCREEN2` (`vdp.h:476`, enum `vdp.h:263`) |
 | `ubox_disable_screen()` | `VDP_EnableDisplay(FALSE)` (`vdp.h:710`) |
 | `ubox_enable_screen()` | `VDP_EnableDisplay(TRUE)` (`vdp.h:710`) |
-| `ubox_set_colors(fg,bg,border)` | `VDP_SetColor2(u8 bg, u8 text)` (`vdp.h:739`) — R#7 packs text+border only; cosmetic |
+| `ubox_set_colors(fg,bg,border)` | `VDP_SetColor2(border, fg)` (`vdp.h:739`, declared as `VDP_SetColor2(u8 bg, u8 text)`): R#7 low nibble = border, high nibble = text (unused in Screen 2). The legacy `bg` argument is unused. NOT cosmetic: map and wave use border 7 (cyan), the explosion flash cycles it. |
 | `ubox_fill_screen(tile)` | `VDP_FillScreen_GM2(u8 value)` (`vdp.h:1395`) |
 | `ubox_set_tiles(tiles)` | `VDP_LoadPattern_GM2(const u8* src, u8 count, u8 offset)` (`vdp.h:1412`), count=0 → 256 |
 | `ubox_set_tiles_colors(colors)` | `VDP_LoadColor_GM2(const u8* src, u8 count, u8 offset)` (`vdp.h:1421`) |
@@ -184,17 +184,39 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - Verify: toolchain produces a 32 KB ROM.
 
 ### Step 2 — Display layer
-- Port `tiles.c/h`, `city.c`, `hud.c`, `wave.c`, `score.c` (VDP only) using the
+- Port the display code of `tiles.c/h`, `city.c`, `hud.c`, `wave.c`, `score.c` using the
   mapping table above. Keep `TILES_MAKE_ADDRESS`/`TILES_PUT_BUFFER` macros
   (reduce to `VDP_WriteVRAM_16K`).
-- Ship tileset via MSXimg (or reuse `src/tileset.h` temporarily).
-- Verify: emulator — correct tiles/colours, title screen, HUD, map.
+- Tileset: MSXimg on the recolored copy, see "Step 2 decisions".
+- Border color: `hud.c:73` (border 1) and `city.c:75` (border 7) are ported in this step.
+  `lane.c:113` (wave, border 7) and `lane.c:126` (explosion flash) belong to `lane.c`,
+  which is not ported here. Provide a helper `set_border(u8 border)` in the display layer,
+  implemented as `VDP_SetColor2(border, 1)`, for `lane.c` to call when it is ported.
+- NOT in this step (leave for later, do not invent stand-ins):
+  - Sprite attribute table writes at 1B00h: `hud.c:38,57,66`, `wave.c:44`, `main.c:58` → Step 4.
+  - R#1 writes (`ubox_wvdp(1, ...)`): `sprites.c:175`, `lane.c:112,146` → Step 4
+    (`lane.c:146` writes 0xE3: bit 0 is sprite magnification x2).
+  - Frame pacing, tick counter, music, input, RNG → Steps 3, 5, 6, 7.
+- Verify: emulator — correct tiles/colours, title screen, HUD, map. Border: black on the
+  title/HUD, cyan on the map.
+
+### Step 2 decisions
+- Colors: `ubox_set_colors(fg, bg, border)` → `VDP_SetColor2(border, fg)`. R#7 low nibble is the border color (the high nibble is the text color, unused in graphic modes).
+  Title/HUD: `VDP_SetColor2(1, 1)`. Map and wave: `VDP_SetColor2(7, 1)` (cyan border). Explosion flash: `VDP_SetColor2(1 + counter % 15, 1)`.
+  The `ubox_set_colors` row of the API mapping table above already carries this correction.
+- Graphics: MSXimg `-mode gm2 -pal msx1 --tilesUnique` on a recolored copy of the tileset (assets/gfx/tiles_msx1.png), which gives 256 tiles in source order, no names table.
+  The copy differs from assets/gfx/tiles.png only in 2 colors: 0x66CC66 → 0x3EB849 and 0x55AA55 → 0x3AA241 (MSXimg's GM2 exporter ignores -pal input/custom and -trans, so the PNG must use the MSXimg MSX1 palette RGB values).
+  The original tiles.png stays untouched. Decoded per-pixel output matches the legacy tileset on 138/138 tiles.
+- Load with `VDP_LoadPattern_GM2(..., 138, 0)` and `VDP_LoadColor_GM2(..., 138, 0)` (all three banks).
+- Highest tile index used: 137 (0x89).
+- Verify in the emulator against the legacy ROM, side by side: tiles, greens, border color on title/HUD (black), map/wave (cyan) and the explosion flash.
 
 ### Step 3 — Loop + interrupts + tick
 - Replace `ubox_init_isr`/`ubox_wait_vsync`/`ubox_set_user_isr`/`ubox_tick` with
   `VDP_EnableVBlank(TRUE)`, `volatile u8` frame counter incremented by an
   `H_TIMI` hook, and `Halt()`/vblank-flag waits.
 - Verify: emulator — correct frame pacing; water/wave animation timing.
+- Open question: does `VDP_WriteVRAM_16K` / `VDP_Poke_GM2` (and the legacy `ubox_write_vm` / `ubox_put_tile`) protect the two-byte VRAM address setup against the vblank interrupt (which reads VDP status and may reset the control-port latch)?
 
 ### Step 4 — Sprites
 - `ubox_wvdp(1,0xe2)` → `VDP_SetSpriteFlag(VDP_SPRITE_SIZE_16)`.
@@ -203,6 +225,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - SAT flush → `VDP_WriteVRAM_16K(attrs, g_SpriteAttributeLow, 68)`.
 - `struct sprite_attr` → `struct VDP_Sprite`. Handle h-flip (pre-flip or local routine).
 - Verify: emulator — gorgons, torpedos, deathray, explosion.
+- `lane.c:146` writes R#1 = 0xE3 while the rest of the game writes 0xE2: bit 0 is sprite magnification (x2). Find which sprites are affected and how to set and clear that bit with MSXgl while keeping the display-enable and interrupt-enable bits.
 
 ### Step 5 — Music + SFX (Arkos AKM)
 - Add `"arkos/akm_player"` to `LibModules`; set `ARKOS_BUFFER_ADDR=0xF000`,
