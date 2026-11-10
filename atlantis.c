@@ -1,14 +1,19 @@
 // ____________________________
-//  Atlantis — MSXgl scaffold (Step 1)
+//  Atlantis — MSXgl (Step 2: display layer)
 //
-//  Minimal entry point: set Screen 2 and halt. The full game logic is ported in
-//  later migration steps.
+//  Sets Screen 2, loads the tileset, and draws the title screen / map / HUD so
+//  they can be checked in the emulator. Frame pacing, sprites, music, input and
+//  RNG are ported in later steps.
 //─────────────────────────────────────────────────────────────────────────────
 
 //=============================================================================
 // INCLUDES
 //=============================================================================
 #include "msxgl.h"
+
+#include "city.h"
+#include "hud.h"
+#include "tiles.h"
 
 //=============================================================================
 // MAIN LOOP
@@ -20,8 +25,13 @@ void main(void)
 {
 	// Screen 2 (Graphic 2), 256×192
 	VDP_SetMode(VDP_MODE_SCREEN2);
+	VDP_ClearVRAM();
 
-	// Halt until the next vertical blank, forever
+	init_tiles();
+
+	map_init();          // map + HUD (cyan border)
+	draw_title_screen(); // title screen (black border), drawn last
+
 	for (;;)
 	{
 		Halt();

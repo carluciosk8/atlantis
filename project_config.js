@@ -15,6 +15,9 @@ ProjModules = [ ProjName ];
 //-- List of library modules to build (array)
 LibModules = [ "system", "bios", "vdp" ];
 
+//-- Additional project sources to compile and link (array)
+AddSources = [ "tiles.c", "city.c", "hud.c", "wave.c", "score.c" ];
+
 //-- Target MSX machine version (string): "1" = MSX1
 Machine = "1";
 

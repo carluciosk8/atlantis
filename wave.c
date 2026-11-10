@@ -1,0 +1,98 @@
+#include "wave.h"
+
+#include "city.h"
+#include "score.h"
+#include "tiles.h"
+
+
+u8 wave_gorgons[WAVE_MAX_SIZE];
+i8 wave_velocities[WAVE_MAX_SIZE];
+i8 g_wave_size;
+
+u8 wave_text[] = { ' ','W','A','V','E',' ','0','0','0',' ' };
+
+
+void wave_init()
+{
+    wave_text[6] = '0';
+    wave_text[7] = '0';
+    wave_text[8] = '1';
+
+    g_wave_size = 4;
+}
+
+
+void wave_draw_hud()
+{
+    const u8 border[] = { ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' };
+    TILES_PUT_BUFFER(11, 5, border, sizeof(border));
+    TILES_PUT_BUFFER(11, 6, wave_text, sizeof(wave_text));
+    TILES_PUT_BUFFER(11, 7, border, sizeof(border));
+
+    // TODO(step 3): wait ~120 frames (ubox_wait_vsync loop with a frame counter).
+    // TODO(step 4): each frame flush SAT (68 B at 0x1B00) + map_update() + torpedo_update_all().
+
+    // Restore the map tiles that the "WAVE" text overwrote (same as legacy: it
+    // rewrites the first 10 bytes of map_background over the 3 text rows).
+    VDP_WriteVRAM_16K(map_background, g_ScreenLayoutLow + 5*32 + 11, 10);
+    VDP_WriteVRAM_16K(map_background, g_ScreenLayoutLow + 6*32 + 11, 10);
+    VDP_WriteVRAM_16K(map_background, g_ScreenLayoutLow + 7*32 + 11, 10);
+}
+
+
+void wave_start()
+{
+    // TODO(step 3): srand(ubox_tick)  →  needs the frame counter (Step 3).
+    // TODO(step 7): srand → Math_SetRandomSeed16; rand → Math_GetRandomMax8.
+    // TODO(step 7): difficulty_adjust(&wave_text[6]); difficulty_get_random_* (difficulty.c).
+    // TODO(step 4): queue_push(&(g_lanes[0]).queue, i) and the wave_gorgons/wave_velocities fill (lane.c/queue.c).
+    // Legacy body:
+    //   srand(ubox_tick);
+    //   difficulty_adjust(&wave_text[6]);
+    //   for (i8 i = 0; i < g_wave_size; i++)
+    //   {
+    //       wave_gorgons[i] = difficulty_get_random_gorgon();
+    //       u8 vel = difficulty_get_random_speed();
+    //       if (wave_gorgons[i] == GORGON_ID_BANDIT_LEFT || wave_gorgons[i] == GORGON_ID_BANDIT_RIGHT) vel++;
+    //       wave_velocities[i] = (wave_gorgons[i] % 2) ? -vel : vel;
+    //       queue_push(&(g_lanes[0]).queue, i);
+    //   }
+}
+
+
+void wave_finish()
+{
+    for (u8 i = 0; i < 7; i++) if (map_have_installation[i]) score_increase_hundred(5);
+    SCORE_DRAW();
+
+    if ((map_have_installation[0] == 0) && (score_credits > 0))
+    {
+        map_create_instalation(0);
+        score_credits--;
+    }
+
+    // TODO(step 4): rebuild installations at the current wave edges using
+    //   collision.c's left_index / right_index:
+    //   while (score_credits > 0 && left_index > 1 && right_index < 6)
+    //   {
+    //       if (score_credits > 0 && left_index > 1)  { left_index--;  map_create_instalation(left_index);  score_credits--; }
+    //       if (score_credits > 0 && right_index < 6) { right_index++; map_create_instalation(right_index); score_credits--; }
+    //   }
+
+    wave_text[8]++;
+    if (wave_text[8] > '9')
+    {
+        wave_text[8] = '0';
+        wave_text[7]++;
+    }
+    if (wave_text[7] > '9')
+    {
+        wave_text[7] = '0';
+        wave_text[6]++;
+    }
+    if (wave_text[6] > '9')
+    {
+        wave_text[6] = '0';
+        wave_text[8]++;
+    }
+}

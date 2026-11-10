@@ -9,7 +9,7 @@ and the **ROM/RAM** table at the end of every step.
 ## Status
 
 - [x] Step 1 — Scaffold MSXgl project (build.sh, project_config.js, msxgl_config.h, stub atlantis.c)
-- [ ] Step 2 — Port display layer (tiles/city/hud/wave/score)
+- [x] Step 2 — Port display layer (tiles/city/hud/wave/score)
 - [ ] Step 3 — Port frame loop + interrupts + tick counter
 - [ ] Step 4 — Port sprites
 - [ ] Step 5 — Port music + SFX (Arkos AKM)
@@ -207,6 +207,9 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - Graphics: MSXimg `-mode gm2 -pal msx1 --tilesUnique` on a recolored copy of the tileset (assets/gfx/tiles_msx1.png), which gives 256 tiles in source order, no names table.
   The copy differs from assets/gfx/tiles.png only in 2 colors: 0x66CC66 → 0x3EB849 and 0x55AA55 → 0x3AA241 (MSXimg's GM2 exporter ignores -pal input/custom and -trans, so the PNG must use the MSXimg MSX1 palette RGB values).
   The original tiles.png stays untouched. Decoded per-pixel output matches the legacy tileset on 138/138 tiles.
+  Exact commands (executed in Step 2):
+  - Recolor: `0x66CC66 → 0x3EB849` (112 px), `0x55AA55 → 0x3AA241` (801 px) in `assets/gfx/tiles_msx1.png` (copy of `assets/gfx/tiles.png`).
+  - `MSXimg assets/gfx/tiles_msx1.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h` → `tileset_Patterns[]` (2048 B) + `tileset_Colors[]` (2048 B), no names table. Verified 138/138 per-pixel match against `src/tileset.h`.
 - Load with `VDP_LoadPattern_GM2(..., 138, 0)` and `VDP_LoadColor_GM2(..., 138, 0)` (all three banks).
 - Highest tile index used: 137 (0x89).
 - Verify in the emulator against the legacy ROM, side by side: tiles, greens, border color on title/HUD (black), map/wave (cyan) and the explosion flash.
@@ -258,10 +261,34 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 |---|---|---|---|
 | legacy | ~14.5 KB (0x4000–0x799B) | ~444 B + 222 B AKM buffer | baseline |
 | 1 | 1402 B (0x4000–0x4579), padded to 32 KB | 65 B (0xC000–0xC040) | scaffold only: stub `main` + MSXgl `system`/`bios`/`vdp` |
-| 2 | | | |
+| 2 | 8168 B (0x4000–0x5FE7), padded to 32 KB | 212 B (0xC000–0xC0D3) | display layer: tileset (256 tiles = 4096 B) + tiles/city/hud/wave/score + MSXgl vdp |
 | 3 | | | |
 | 4 | | | |
 | 5 | | | |
 | 6 | | | |
 | 7 | | | |
 | 8 | | | |
+
+---
+
+## Findings (learned during execution, affects later steps)
+
+- **Tileset is 256 tiles in ROM but only 138 are loaded.** `--tilesUnique` emits all 256
+  tiles (4096 B = 2048 pattern + 2048 colour), of which the game only references
+  0..137 (`TILES_COUNT`). The blank tail (138..255, ~1888 B) is dead weight. If ROM
+  size ever matters, trim `tileset.h` to the first 138 tiles (or drop `--tilesUnique`
+  and remap all tile indices). Do not bother now — ROM is still far below 16 KB.
+- **`map_installations_vaddress` type changed** from `const uint8_t*` (absolute `0x1800+…`
+  addresses) to `const u16` (name-table offsets, added to `g_ScreenLayoutLow` at the
+  use site). Callers are `map_create_instalation` / `map_destroy_instalation` only.
+- **`set_border(u8 border)`** lives in `tiles.c` (`VDP_SetColor2(border, 1)`). Step 4
+  (`lane.c`) must call it for the wave border (7) and the explosion flash
+  (`1 + counter % 15`), instead of `ubox_set_colors`.
+- **`draw_title_screen()` is now public** (`hud.h`), it was file-local in the legacy.
+  `hud_show_title_screen()` keeps a TODO for `wait_fire_button()` (Step 6) and the
+  blink loop (Step 3).
+- **`map_update()` water/generator animation is stubbed** with `four_frames_count = 0`
+  until Step 3 supplies the frame counter (legacy `ubox_tick`).
+- **`VDP_SetColor2(bg, text)` argument order confirmed** (bg = border/backdrop = R#7
+  low nibble, text = R#7 high nibble, unused in G2). Samples `s_gm3.c:117/125/153` and
+  `s_psg.c:331` confirm it. The border is the *low* nibble.
