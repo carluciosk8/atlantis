@@ -36,6 +36,13 @@ extern u8 map_state;
 extern u8 map_explosion_counter;
 
 
+// Frame counter (platform/loop layer), incremented once per vblank by the
+// H_TIMI hook installed in atlantis.c. 8-bit, wraps every 256 frames (legacy
+// ubox_tick). Used by map_update() for the water/generator animation; later
+// steps use it for the RNG seed (Step 7) and the deathray animation (Step 4).
+extern volatile u8 g_FrameCounter;
+
+
 void map_init();
 void map_create_instalation(u8 index);
 void map_destroy_instalation(u8 index);

@@ -10,7 +10,7 @@ and the **ROM/RAM** table at the end of every step.
 
 - [x] Step 1 — Scaffold MSXgl project (build.sh, project_config.js, msxgl_config.h, stub atlantis.c)
 - [x] Step 2 — Port display layer (tiles/city/hud/wave/score)
-- [ ] Step 3 — Port frame loop + interrupts + tick counter
+- [x] Step 3 — Port frame loop + interrupts + tick counter
 - [ ] Step 4 — Port sprites
 - [ ] Step 5 — Port music + SFX (Arkos AKM)
 - [ ] Step 6 — Port input
@@ -215,11 +215,27 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - Verify in the emulator against the legacy ROM, side by side: tiles, greens, border color on title/HUD (black), map/wave (cyan) and the explosion flash.
 
 ### Step 3 — Loop + interrupts + tick
-- Replace `ubox_init_isr`/`ubox_wait_vsync`/`ubox_set_user_isr`/`ubox_tick` with
-  `VDP_EnableVBlank(TRUE)`, `volatile u8` frame counter incremented by an
-  `H_TIMI` hook, and `Halt()`/vblank-flag waits.
+- Replace `ubox_init_isr`/`ubox_wait_vsync`/`ubox_tick` with `VDP_EnableVBlank(TRUE)`,
+  a `volatile u8` frame counter incremented by an `H_TIMI` hook, and `Halt()` waits.
+  See "Step 3 decisions". (`ubox_set_user_isr` is the music player: Step 5.)
 - Verify: emulator — correct frame pacing; water/wave animation timing.
+  The 480/270/120-frame waits and the title blink are not reachable from the stub main. Both libraries wait with one `halt` per frame, so their duration matches by construction; observe them when the full game flow runs. Real timing risk: frames whose logic takes longer than one vblank (check the busiest moments side by side with the legacy ROM once the game logic is ported).
 - Open question: does `VDP_WriteVRAM_16K` / `VDP_Poke_GM2` (and the legacy `ubox_write_vm` / `ubox_put_tile`) protect the two-byte VRAM address setup against the vblank interrupt (which reads VDP status and may reset the control-port latch)?
+  - Answered: `VDP_WriteVRAM_16K` / `VDP_Poke_GM2` are DI/EI-protected (see "Step 3 decisions"); the legacy functions were not.
+
+### Step 3 decisions
+(From the read-only analysis of Step 3.)
+- `ubox_init_isr(wait_ticks)`: Atlantis passes 1, and the argument only affects `ubox_wait()`, which the game never calls. Nothing to port; do not emulate it.
+- Frame counter: `volatile u8 g_FrameCounter` (8 bits, wraps every 256 frames, like `ubox_tick`), incremented once per vblank by an `H_TIMI` hook installed with `BIOS_SetHookCallback(H_TIMI, cb)` after `VDP_EnableVBlank(TRUE)`. Zero it at boot (legacy `ubox_reset_tick()`, `main.c:23`). Expose it with `extern` for later steps (`wave.c:58` RNG seed, `lane.c:84` deathray animation).
+- Animation: `four_frames_count = (g_FrameCounter % 16) >> 2; two_frames_count = four_frames_count >> 1;` (legacy `city.c:125`).
+- Frame waits: `ubox_wait_vsync()` is a plain `halt` (one vblank per call). Use `Halt()` once per loop iteration. Counts: 480 (`hud.c`, hi-score screen), 270 (`hud.c`, game over screen), 120 (`wave.c`, wave HUD). The title blink is 10 x (7 + 7) = 140 vblanks. At 60 Hz: 8.0 / 4.5 / 2.0 / 2.33 s. At 50 Hz: 9.6 / 5.4 / 2.4 / 2.8 s. No 50/60 Hz compensation, as in the legacy.
+- The hook only increments the counter. It must not touch the VDP and must not call the music player in this step (the music placement is decided in Step 5).
+- VRAM writes: `VDP_WriteVRAM_16K` and `VDP_Poke_GM2` protect the two-byte address setup with DI/EI (`VDP_ISR_SAFE_DEFAULT`, `msxgl_config.h:112`). Use only MSXgl VDP functions for VRAM access, never raw port writes. (The legacy `ubox_write_vm` / `ubox_put_tile` were not protected.)
+- The BIOS interrupt handler keeps running (keyboard scan, etc.). `BIOS_SetHookCallback` replaces only the empty `H_TIMI` hook, so there is nothing to chain.
+- `ubox_set_user_isr(mplayer_play)` is the music player, so it belongs to Step 5, not here.
+- Hook installation: `BIOS_SetHookCallback` overwrites the hook bytes. Install it with interrupts disabled (`DI` before, `EI` after) so a vblank interrupt cannot run a half-written hook, unless `BIOS_SetHookCallback` / `BIOS_SetHookInterSlotCallback` (`bios.c:83-87`, `bios_hook.h:56-61`) already does that. Check, and note the result in Findings.
+- `Halt()` needs interrupts enabled: make sure interrupts are enabled (`EI`) before the first `Halt()`. A frozen screen right after boot usually means this.
+- Markers that mix steps: `srand(ubox_tick)` (`wave.c:45`) is RNG: leave it for Step 7 and rewrite the marker as `TODO(step 7)` (the frame counter only has to exist). In the title screen (`hud.c:71-73`, `hud.c:87-91`), port the blink timing (10 cycles of 7 frames off / 7 frames on) and leave the fire-button read (`wait_fire_button`) as `TODO(step 6)`.
 
 ### Step 4 — Sprites
 - `ubox_wvdp(1,0xe2)` → `VDP_SetSpriteFlag(VDP_SPRITE_SIZE_16)`.
@@ -262,7 +278,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 | legacy | ~14.5 KB (0x4000–0x799B) | ~444 B + 222 B AKM buffer | baseline |
 | 1 | 1402 B (0x4000–0x4579), padded to 32 KB | 65 B (0xC000–0xC040) | scaffold only: stub `main` + MSXgl `system`/`bios`/`vdp` |
 | 2 | 8168 B (0x4000–0x5FE7), padded to 32 KB | 212 B (0xC000–0xC0D3) | display layer: tileset (256 tiles = 4096 B) + tiles/city/hud/wave/score + MSXgl vdp |
-| 3 | | | |
+| 3 | 8959 B (0x4000–0x62FE), padded to 32 KB | 213 B (0xC000–0xC0D4) | frame loop + H_TIMI hook + `g_FrameCounter` (+1 B); water/generator animation live |
 | 4 | | | |
 | 5 | | | |
 | 6 | | | |
@@ -285,10 +301,24 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   (`lane.c`) must call it for the wave border (7) and the explosion flash
   (`1 + counter % 15`), instead of `ubox_set_colors`.
 - **`draw_title_screen()` is now public** (`hud.h`), it was file-local in the legacy.
-  `hud_show_title_screen()` keeps a TODO for `wait_fire_button()` (Step 6) and the
-  blink loop (Step 3).
-- **`map_update()` water/generator animation is stubbed** with `four_frames_count = 0`
-  until Step 3 supplies the frame counter (legacy `ubox_tick`).
+  `hud_show_title_screen()` ported the blink loop in Step 3 and keeps a TODO only for
+  `wait_fire_button()` (Step 6).
+- **`map_update()` water/generator animation**: stubbed in Step 2, resolved in Step 3
+  (`g_FrameCounter`).
 - **`VDP_SetColor2(bg, text)` argument order confirmed** (bg = border/backdrop = R#7
   low nibble, text = R#7 high nibble, unused in G2). Samples `s_gm3.c:117/125/153` and
   `s_psg.c:331` confirm it. The border is the *low* nibble.
+- **`BIOS_SetHookCallback`/`BIOS_SetHookInterSlotCallback` do NOT DI/EI** (confirmed
+  `bios.c:83-87`, `bios_hook.h:56-61`): the interslot hook write is `0xF7` (RST #30) +
+  slot + 16-bit `cb` = **4 bytes** (not 5 as guessed in the Step 3 decisions), with no
+  interrupt protection. `atlantis.c` installs the hook wrapped in `DisableInterrupt()`/
+  `EnableInterrupt()` so a vblank can't run a half-written hook.
+- **`g_FrameCounter`** (`volatile u8`, 8-bit, wraps every 256 frames like `ubox_tick`) is
+  defined in `atlantis.c` and declared `extern volatile u8` in `city.h` (its primary
+  consumer is `map_update()`). Step 4 (`lane.c` deathray) and Step 7 (`wave.c` RNG seed)
+  read it through `city.h`.
+- **The explosion branch in `map_update()` is entirely Step 4.** The legacy's local
+  `g_buildings_explosion_frame = map_explosion_counter >> 2` was folded into the Step 4
+  marker because the whole `MAP_STATE_EXPLODING` branch only writes sprite attributes
+  (`sprites_attributes[15]/[16]`); it does not use `g_FrameCounter` (it uses
+  `map_explosion_counter`, incremented per-frame inside that Step 4 branch).

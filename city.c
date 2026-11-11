@@ -118,12 +118,11 @@ void map_start_explosion(u8 x, u8 y)
 
 void map_update()
 {
-    // TODO(step 3): four_frames_count/two_frames_count come from the frame
-    //   counter (legacy ubox_tick), not yet ported.
-    //   uint8_t four_frames_count = (ubox_tick % 16) >> 2;
-    //   uint8_t two_frames_count = four_frames_count >> 1;
-    u8 four_frames_count = 0;
-    u8 two_frames_count = 0;
+    // Water/generator animation, driven by the 8-bit frame counter (legacy
+    // ubox_tick). four_frames_count advances every 4 vblanks (0..3),
+    // two_frames_count every 8 vblanks (0..1).
+    u8 four_frames_count = (g_FrameCounter % 16) >> 2;
+    u8 two_frames_count = four_frames_count >> 1;
 
     if (map_have_installation[4]) VDP_Poke_GM2(17, 13, map_generator_air[0] + two_frames_count);
     if (map_have_installation[3]) VDP_Poke_GM2(13, 15, map_generator_aqua[0] + four_frames_count);
@@ -134,8 +133,10 @@ void map_update()
 
     if (map_state == MAP_STATE_EXPLODING)
     {
-        // TODO(step 3): g_buildings_explosion_frame = map_explosion_counter >> 2
-        // TODO(step 4): update the explosion sprites from sprites_explosion_anim1/2,
-        //   and clear the sprite attributes when the animation finishes.
+        // TODO(step 4): explosion animation (sprites), driven by
+        //   map_explosion_counter (incremented each frame while exploding):
+        //     u8 g_buildings_explosion_frame = map_explosion_counter >> 2;
+        //     if (g_buildings_explosion_frame > 4) { map_state = MAP_STATE_IDLE; clear sprites 15/16; }
+        //     else { update sprites_attributes[15]/[16] patterns; map_explosion_counter++; }
     }
 }

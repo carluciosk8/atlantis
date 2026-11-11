@@ -26,9 +26,13 @@ void hud_draw_hi_score()
     TILES_PUT_BUFFER(6, 7, text3, sizeof(text3));
     TILES_PUT_BUFFER(6, 8, border, sizeof(border));
 
-    // TODO(step 3): wait ~480 frames (ubox_wait_vsync loop with a frame counter).
-    // TODO(step 4): each frame, flush the sprite attribute table (68 B at 0x1B00).
-    // TODO(step 4): map_update(); (also needs the frame counter, Step 3)
+    // Wait ~480 frames (8.0 s at 60 Hz, 9.6 s at 50 Hz).
+    for (u16 frame = 0; frame < 480; frame++)
+    {
+        Halt();
+        // TODO(step 4): each frame, flush the sprite attribute table (68 B at 0x1B00)
+        //   and call map_update().
+    }
 }
 
 
@@ -40,9 +44,13 @@ void hud_draw_game_over()
     TILES_PUT_BUFFER(11, 6, text, sizeof(text));
     TILES_PUT_BUFFER(11, 7, border, sizeof(border));
 
-    // TODO(step 3): wait ~270 frames (ubox_wait_vsync loop with a frame counter).
-    // TODO(step 4): each frame flush SAT + map_update() + lane_update_all() +
-    //   torpedo_update_all() + collision_handle_torpedos().
+    // Wait ~270 frames (4.5 s at 60 Hz, 5.4 s at 50 Hz).
+    for (u16 frame = 0; frame < 270; frame++)
+    {
+        Halt();
+        // TODO(step 4): each frame flush SAT + map_update() + lane_update_all() +
+        //   torpedo_update_all() + collision_handle_torpedos().
+    }
     // TODO(step 4): clear all 17 sprite attributes (attr = 0) then flush SAT.
 }
 
@@ -67,8 +75,22 @@ void draw_title_screen()
 void hud_show_title_screen()
 {
     draw_title_screen();
+
     // TODO(step 6): wait_fire_button();   (input, ubox_read_ctl cursor + FIRE1)
-    // TODO(step 3): "HIT TRIGGER TO START" blink loop (10 cycles of 7 frames
-    //   off / 7 frames on), using ubox_wait_vsync() and
-    //   TILES_PUT_BUFFER_CENTERED(13, title_tiles_line7 / title_tiles_line5).
+
+    // "HIT TRIGGER TO START" blink loop: 10 cycles of 7 frames off / 7 frames on
+    // (140 vblanks total ~ 2.33 s at 60 Hz, 2.8 s at 50 Hz).
+    for (u8 f = 0; f < 10; f++)
+    {
+        for (u8 i = 0; i < 7; i++)
+        {
+            Halt();
+            TILES_PUT_BUFFER_CENTERED(13, title_tiles_line7);
+        }
+        for (u8 j = 0; j < 7; j++)
+        {
+            Halt();
+            TILES_PUT_BUFFER_CENTERED(13, title_tiles_line5);
+        }
+    }
 }

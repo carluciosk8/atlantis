@@ -29,8 +29,12 @@ void wave_draw_hud()
     TILES_PUT_BUFFER(11, 6, wave_text, sizeof(wave_text));
     TILES_PUT_BUFFER(11, 7, border, sizeof(border));
 
-    // TODO(step 3): wait ~120 frames (ubox_wait_vsync loop with a frame counter).
-    // TODO(step 4): each frame flush SAT (68 B at 0x1B00) + map_update() + torpedo_update_all().
+    // Wait ~120 frames (2.0 s at 60 Hz, 2.4 s at 50 Hz).
+    for (u16 frame = 0; frame < 120; frame++)
+    {
+        Halt();
+        // TODO(step 4): each frame flush SAT (68 B at 0x1B00) + map_update() + torpedo_update_all().
+    }
 
     // Restore the map tiles that the "WAVE" text overwrote (same as legacy: it
     // rewrites the first 10 bytes of map_background over the 3 text rows).
@@ -42,8 +46,7 @@ void wave_draw_hud()
 
 void wave_start()
 {
-    // TODO(step 3): srand(ubox_tick)  →  needs the frame counter (Step 3).
-    // TODO(step 7): srand → Math_SetRandomSeed16; rand → Math_GetRandomMax8.
+    // TODO(step 7): srand(ubox_tick)  →  Math_SetRandomSeed16(g_FrameCounter).
     // TODO(step 7): difficulty_adjust(&wave_text[6]); difficulty_get_random_* (difficulty.c).
     // TODO(step 4): queue_push(&(g_lanes[0]).queue, i) and the wave_gorgons/wave_velocities fill (lane.c/queue.c).
     // Legacy body:
