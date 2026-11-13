@@ -259,6 +259,17 @@ void sprites_flush(void)
 }
 
 
+//-----------------------------------------------------------------------------
+// Set sprite magnification (R#1 bit 0). x2 magnification is global, so the
+// bandit big explosion magnifies every sprite on screen (legacy behaviour).
+// Always keeps the 16x16 size bit set. Matches the legacy ubox_wvdp(1, 0xE2)
+// (off) and ubox_wvdp(1, 0xE3) (on).
+void sprites_set_magnification(bool on)
+{
+    VDP_SetSpriteFlag(VDP_SPRITE_SIZE_16 | (on ? VDP_SPRITE_SCALE_2 : VDP_SPRITE_SCALE_1));
+}
+
+
 void sprites_disable_deathray(void)
 {
     sprites_attributes[10].Color = 0;

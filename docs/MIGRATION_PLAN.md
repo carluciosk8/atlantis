@@ -12,7 +12,7 @@ and the **ROM/RAM** table at the end of every step.
 - [x] Step 2 — Port display layer (tiles/city/hud/wave/score)
 - [x] Step 3 — Port frame loop + interrupts + tick counter
 - [x] Step 4a — sprites.c/h (patterns, flip, SAT flush)
-- [ ] Step 4b — queue, gorgons, difficulty, lane, wave_start
+- [x] Step 4b — queue, gorgons, difficulty, lane, wave_start
 - [ ] Step 4c — torpedo, collision, score/city integration
 - [ ] Step 4d — input stub, wave_finish, full game flow in main
 - [ ] Step 5 — Port music + SFX (Arkos AKM)
@@ -246,14 +246,20 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   every pattern, especially the flipped gorgons and the 2-color overlays.
 - 4b: port `queue`, `gorgons`, `difficulty`, `lane` and finish `wave_start`. Stub
   `collision_handle_deathray()` as a no-op. Music calls stay commented (TODO(step 5)).
-  Visible: gorgons cross the lanes, the deathray animates, the bandit big explosion (x2
-  magnification and border flash).
-- 4c: port `torpedo` and `collision`, the `wave.c:77` installation rebuild, and wire score/city.
-  Temporary auto-fire stand-in (TODO(step 6)). Visible: torpedoes, hits, score, destroyed
-  installations, building explosions.
+  Visible (with the timer-forced explosions of the temporary test): gorgons cross the first two
+  lanes, small and big (x2 magnification and border flash) explosions. The last lanes, the deathray
+  and the end of the wave are NOT exercised here (see Findings): they are covered in 4c and 4d.
+- 4c: port `torpedo` and `collision`, replacing the stub headers `collision.h` / `torpedo.h` and
+  removing the stubs `torpedos[]` and `collision_handle_deathray` from `lane.c` (see Findings).
+  Port the `wave.c:77` installation rebuild and wire score/city. Temporary auto-fire stand-in
+  (TODO(step 6)) that can be switched off with a compile-time define, so gorgons can reach the last
+  lane and the deathray can be observed.
+  Visible: torpedoes, hits, score, destroyed installations, building explosions, the deathray.
 - 4d: `input.c` as a stub (the title auto-advances after the blink, torpedoes auto-fire on a
-  timer, TODO(step 6)); port `wave_finish`; rebuild the full game flow in `main`.
-  Visible: title, wave HUD, gameplay, game over, hi-score screen, end to end.
+  timer, TODO(step 6)); port `wave_finish`; remove the temporary `TestLanesStep4b()` from
+  `atlantis.c` (marked `TODO(step 4d: remove)`); rebuild the full game flow in `main`.
+  Visible: title, wave HUD, gameplay, game over, hi-score screen, end to end. Later waves bring
+  bandits and higher speeds.
 - Final verify (after 4d): emulator, side by side with the legacy ROM: gorgons, torpedoes,
   deathray, explosions.
 
@@ -282,7 +288,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   not set the 16x16 bit). Magnification x2 is global (R#1 bit 0), so the bandit big explosion
   magnifies every sprite on screen: `VDP_SetSpriteFlag(VDP_SPRITE_SIZE_16 | VDP_SPRITE_SCALE_2)`,
   and restore without SCALE_2 (confirm the constant names in vdp.h). It preserves the display and
-  interrupt bits.
+  interrupt bits. Implemented as the helper sprites_set_magnification(bool) in sprites.c (4b).
 - Torpedo naming (not a bug): `TORPEDO_LEFT_PATT` / `TORPEDO_RIGHT_PATT` name the LAUNCHER side, while
   the comments in the `sprites[]` data name the pointing direction. `TORPEDO_LEFT_PATT` (13*4) is the
   torpedo launched from the left launcher, drawn pointing right (`torpedo_right`, 16x16 pattern 13).
@@ -290,7 +296,9 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - Stand-ins (temporary): every one is marked `TODO(step N)` in code, listed in Findings, and
   removed in step N. Music calls are commented out (Step 5); `handle_input` / `wait_fire_button`
   are stubs (Step 6). RNG: keep the SDCC `rand()` / `srand()` as the legacy does (confirm it
-  links); Step 7 decides whether to switch.
+  links); Step 7 decides whether to switch. Confirmed in 4b: it links; difficulty.c declares
+  int rand(void); by hand because the embedded SDCC's stdlib.h is not on the include path
+  (remove that declaration when Step 7 replaces rand).
 - The temporary sprite test in `main` (4a) must be removed when 4b starts.
 
 ### Step 5 — Music + SFX (Arkos AKM)
@@ -327,7 +335,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 | 2 | 8168 B (0x4000–0x5FE7), padded to 32 KB | 212 B (0xC000–0xC0D3) | display layer: tileset (256 tiles = 4096 B) + tiles/city/hud/wave/score + MSXgl vdp |
 | 3 | 8959 B (0x4000–0x62FE), padded to 32 KB | 213 B (0xC000–0xC0D4) | frame loop + H_TIMI hook + `g_FrameCounter` (+1 B); water/generator animation live |
 | 4a | 10366 B (0x4000–0x687D), padded to 32 KB | 281 B (0xC000–0xC118) | sprites.c/h: 29 patterns (938 B sprite data in ROM) + `sprites_attributes[17]` (68 B RAM); temp sprite test in atlantis.c |
-| 4b | | | |
+| 4b | 12243 B (0x4000–0x6FD2), padded to 32 KB | 485 B (0xC000–0xC1E5) | queue/gorgons/difficulty/lane + `wave_start`; `rand()`/signed+unsigned div+mod pulled from z80.lib; temp lane test in atlantis.c |
 | 4c | | | |
 | 4d | | | |
 | 5 | | | |
@@ -398,3 +406,56 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - **Step 4a — `sprites_flush()`** wraps `VDP_WriteVRAM_16K((u8*)sprites_attributes,
   g_SpriteAttributeLow, 68)`. 4b-4d call it wherever the legacy flushed the SAT
   (`hud.c` waits, `wave.c` wave HUD, the main loop).
+- **Step 4b — VDP register writes are DI/EI-protected; no extra wrapping needed.**
+  `VDP_RegWrite` (vdp.c:1727) and `VDP_RegWriteBak` (vdp.c:1750) wrap the two
+  control-port writes in `VDP_DI`/`VDP_EI` (di/ei, `msxgl_config.h:112`
+  `VDP_ISR_SAFE_DEFAULT`; the `ei` sits before the second `out`, relying on Z80
+  EI's one-instruction delay). `VDP_RegWriteBakMask` (vdp.c:1780),
+  `VDP_SetSpriteFlag` (vdp.h:1099) and `VDP_SetColor2` (vdp.h:739) all funnel
+  through those two. So `set_border()` (tiles.c) and the new
+  `sprites_set_magnification()` (sprites.c) are already safe against the BIOS
+  vblank ISR resetting the control-port latch — no `DisableInterrupt()`/
+  `EnableInterrupt()` wrapping was added.
+- **Step 4b — `sprites_set_magnification(bool on)`** added to sprites.c/h:
+  `VDP_SetSpriteFlag(VDP_SPRITE_SIZE_16 | (on ? VDP_SPRITE_SCALE_2 : VDP_SPRITE_SCALE_1))`.
+  `lane.c` uses it for the bandit big explosion (on = legacy `ubox_wvdp(1,0xE3)`,
+  off = `ubox_wvdp(1,0xE2)`); `set_border(7)` restores the border and
+  `set_border(1 + counter % 15)` does the flash.
+- **Step 4b — embedded SDCC `<stdlib.h>` is NOT on the default include path.**
+  The build tool adds `-I tools/` but not `-I tools/sdcc/include`; SDCC's own
+  `--print-search-dirs` resolves headers at `<bin>/../share/sdcc/include`, but the
+  headers actually live in `tools/sdcc/include/` (no `share/`). `difficulty.c`
+  therefore declares `int rand(void);` manually instead of including `<stdlib.h>`.
+  It links fine: `z80.lib` provides `rand.rel` (plus `modsigned/divsigned/
+  modunsigned/divunsigned` for the `%` ops). `RAND_MAX` is **32767** in both the
+  embedded SDCC (`tools/sdcc/include/stdlib.h:51`) and SDCC 4.0.0
+  (`share/sdcc/include/stdlib.h:51`), so `rand() % N` produces values in the same
+  `[0,N-1]` range in both; the exact sequence may differ between SDCC versions but
+  `srand` is never called, so waves repeat identically every boot (expected).
+  Step 7 will replace `rand()` with `Math_GetRandom8()`/`Math_GetRandomMax8()`.
+- **Step 4b — collision/torpedo stubs.** `lane.c` is the only consumer in this
+  step. It needs two symbols: `collision_handle_deathray(u8 x, i8 v)` (stubbed as a
+  no-op in lane.c) and `torpedo_t torpedos[2]` (stubbed in lane.c, `.sprite`
+  pointed at `sprites_attributes[8]`/`[9]` so `lane_start_state_exploding`'s
+  torpedo deactivation write is harmless). Minimal stub headers `collision.h` and
+  `torpedo.h` were added (both marked TODO(step 4c)); Step 4c ports the real
+  collision.c/torpedo.c and **removes the stubs from lane.c** (duplicate symbols).
+- **Step 4b — `lane_start_state_exploding`** was already public in the legacy
+  `lane.h`, so no extra exposure was needed for the test to call it.
+- **Step 4b — lane state machine with `collision_handle_deathray` as a no-op.**
+  `WAITING` → (queue non-empty) `MOVING`; `MOVING` only ever returns to `WAITING`
+  (gorgon crosses the lane, then pushes to the next lane's queue or decrements
+  `g_wave_size` + `sprites_disable_deathray()` on lane 3). Nothing transitions to
+  `EXPLODING` on its own, so the initial wave (10 gorgons from `wave_start`) marches
+  0→1→2→3 and then `g_wave_size` reaches 0 with all lanes idle. `EXPLODING` is
+  reached only via `lane_start_state_exploding` (forced by the test timer now,
+  collision/torpedo later). The `TestLanesStep4b()` frame loop never blocks
+  (`Halt()` returns every vblank; every state either advances or is idle), so it
+  runs forever, never stuck: gorgons cross once, then the timer keeps forcing a
+  small explosion (lane 0) and a big one (lane 1, x2 + border flash) indefinitely.
+- **Step 4b — `map_destroy_instalation` now does `g_is_attacking = 0;` +
+  `sprites_disable_deathray();`** (both dependencies existed after this step). The
+  remaining `map_start_explosion` / `map_update` explosion branch and `wave_finish`
+  rebuild are TODO(step 4c). `hud_draw_hi_score`/`hud_draw_game_over`/`wave_draw_hud`
+  now flush the SAT + `map_update()` (+ `lane_update_all()` for game-over); only the
+  `torpedo_update_all()` / `collision_handle_torpedos()` lines remain TODO(step 4c).

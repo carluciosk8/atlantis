@@ -1,7 +1,11 @@
 #include "wave.h"
 
 #include "city.h"
+#include "difficulty.h"
+#include "gorgons.h"
+#include "lane.h"
 #include "score.h"
+#include "sprites.h"
 #include "tiles.h"
 
 
@@ -33,7 +37,9 @@ void wave_draw_hud()
     for (u16 frame = 0; frame < 120; frame++)
     {
         Halt();
-        // TODO(step 4): each frame flush SAT (68 B at 0x1B00) + map_update() + torpedo_update_all().
+        sprites_flush();
+        map_update();
+        // TODO(step 4c): torpedo_update_all();
     }
 
     // Restore the map tiles that the "WAVE" text overwrote (same as legacy: it
@@ -47,19 +53,15 @@ void wave_draw_hud()
 void wave_start()
 {
     // TODO(step 7): srand(ubox_tick)  →  Math_SetRandomSeed16(g_FrameCounter).
-    // TODO(step 7): difficulty_adjust(&wave_text[6]); difficulty_get_random_* (difficulty.c).
-    // TODO(step 4): queue_push(&(g_lanes[0]).queue, i) and the wave_gorgons/wave_velocities fill (lane.c/queue.c).
-    // Legacy body:
-    //   srand(ubox_tick);
-    //   difficulty_adjust(&wave_text[6]);
-    //   for (i8 i = 0; i < g_wave_size; i++)
-    //   {
-    //       wave_gorgons[i] = difficulty_get_random_gorgon();
-    //       u8 vel = difficulty_get_random_speed();
-    //       if (wave_gorgons[i] == GORGON_ID_BANDIT_LEFT || wave_gorgons[i] == GORGON_ID_BANDIT_RIGHT) vel++;
-    //       wave_velocities[i] = (wave_gorgons[i] % 2) ? -vel : vel;
-    //       queue_push(&(g_lanes[0]).queue, i);
-    //   }
+    difficulty_adjust(&wave_text[6]);
+    for (i8 i = 0; i < g_wave_size; i++)
+    {
+        wave_gorgons[i] = difficulty_get_random_gorgon();
+        u8 vel = difficulty_get_random_speed();
+        if (wave_gorgons[i] == GORGON_ID_BANDIT_LEFT || wave_gorgons[i] == GORGON_ID_BANDIT_RIGHT) vel++;
+        wave_velocities[i] = (wave_gorgons[i] % 2) ? -vel : vel;
+        queue_push(&(g_lanes[0]).queue, i);
+    }
 }
 
 
@@ -74,7 +76,7 @@ void wave_finish()
         score_credits--;
     }
 
-    // TODO(step 4): rebuild installations at the current wave edges using
+    // TODO(step 4c): rebuild installations at the current wave edges using
     //   collision.c's left_index / right_index:
     //   while (score_credits > 0 && left_index > 1 && right_index < 6)
     //   {

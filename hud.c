@@ -1,5 +1,8 @@
 #include "hud.h"
 
+#include "city.h"
+#include "lane.h"
+#include "sprites.h"
 #include "tiles.h"
 
 
@@ -30,8 +33,8 @@ void hud_draw_hi_score()
     for (u16 frame = 0; frame < 480; frame++)
     {
         Halt();
-        // TODO(step 4): each frame, flush the sprite attribute table (68 B at 0x1B00)
-        //   and call map_update().
+        sprites_flush();
+        map_update();
     }
 }
 
@@ -48,10 +51,16 @@ void hud_draw_game_over()
     for (u16 frame = 0; frame < 270; frame++)
     {
         Halt();
-        // TODO(step 4): each frame flush SAT + map_update() + lane_update_all() +
-        //   torpedo_update_all() + collision_handle_torpedos().
+        sprites_flush();
+        map_update();
+        lane_update_all();
+        // TODO(step 4c): torpedo_update_all();
+        // TODO(step 4c): collision_handle_torpedos();
     }
-    // TODO(step 4): clear all 17 sprite attributes (attr = 0) then flush SAT.
+
+    // Clear all 17 sprite attributes then flush the SAT.
+    for (u8 i = 0; i < 17; i++) sprites_attributes[i].Color = 0;
+    sprites_flush();
 }
 
 

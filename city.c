@@ -1,6 +1,8 @@
 #include "city.h"
 
 #include "hud.h"
+#include "lane.h"
+#include "sprites.h"
 #include "tiles.h"
 
 
@@ -96,20 +98,20 @@ void map_destroy_instalation(u8 index)
 {
     VDP_WriteVRAM_16K(map_installations_address[index], g_ScreenLayoutLow + map_installations_vaddress[index], map_installations_size[index]);
     map_have_installation[index] = 0;
-    // TODO(step 4): g_is_attacking = 0;                       (lane.c)
-    // TODO(step 4): sprites_disable_deathray();               (sprites.c)
+    g_is_attacking = 0;
+    sprites_disable_deathray();
     // TODO(step 5): mplayer_play_effect_p(5, 0, 0);  →  AKM_PlaySFX(5, 0, 0)
 }
 
 
 void map_start_explosion(u8 x, u8 y)
 {
-    // TODO(step 4): place the two explosion sprites at (x, y).
-    //   sprites_attributes[15].x = x; sprites_attributes[16].x = x;
-    //   sprites_attributes[15].y = y; sprites_attributes[16].y = y;
-    //   sprites_attributes[15].attr = 9;  sprites_attributes[16].attr = 11;
-    //   sprites_attributes[15].pattern = sprites_explosion_anim1[0];
-    //   sprites_attributes[16].pattern = sprites_explosion_anim2[0];
+    // TODO(step 4c): place the two explosion sprites at (x, y).
+    //   sprites_attributes[15].X = x; sprites_attributes[16].X = x;
+    //   sprites_attributes[15].Y = y; sprites_attributes[16].Y = y;
+    //   sprites_attributes[15].Color = 9;  sprites_attributes[16].Color = 11;
+    //   sprites_attributes[15].Pattern = sprites_explosion_anim1[0];
+    //   sprites_attributes[16].Pattern = sprites_explosion_anim2[0];
     x; y;
     map_explosion_counter = 0;
     map_state = MAP_STATE_EXPLODING;
@@ -133,7 +135,7 @@ void map_update()
 
     if (map_state == MAP_STATE_EXPLODING)
     {
-        // TODO(step 4): explosion animation (sprites), driven by
+        // TODO(step 4c): explosion animation (sprites), driven by
         //   map_explosion_counter (incremented each frame while exploding):
         //     u8 g_buildings_explosion_frame = map_explosion_counter >> 2;
         //     if (g_buildings_explosion_frame > 4) { map_state = MAP_STATE_IDLE; clear sprites 15/16; }

@@ -20,5 +20,6 @@ extern const u8 sprites_explosion_anim2[];
 
 void init_sprites();           // set 16x16 mode + load all sprite patterns
 void sprites_flush();          // write sprites_attributes to the SAT
+void sprites_set_magnification(bool on); // sprite size x1 (false) / x2 (true), keeps 16x16
 void sprites_disable_deathray();
 void sprites_update_deathray(u8 x, u8 frame);
