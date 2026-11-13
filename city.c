@@ -106,13 +106,14 @@ void map_destroy_instalation(u8 index)
 
 void map_start_explosion(u8 x, u8 y)
 {
-    // TODO(step 4c): place the two explosion sprites at (x, y).
-    //   sprites_attributes[15].X = x; sprites_attributes[16].X = x;
-    //   sprites_attributes[15].Y = y; sprites_attributes[16].Y = y;
-    //   sprites_attributes[15].Color = 9;  sprites_attributes[16].Color = 11;
-    //   sprites_attributes[15].Pattern = sprites_explosion_anim1[0];
-    //   sprites_attributes[16].Pattern = sprites_explosion_anim2[0];
-    x; y;
+    sprites_attributes[15].X = x;
+    sprites_attributes[16].X = x;
+    sprites_attributes[15].Y = y;
+    sprites_attributes[16].Y = y;
+    sprites_attributes[15].Color = 9;
+    sprites_attributes[16].Color = 11;
+    sprites_attributes[15].Pattern = sprites_explosion_anim1[0];
+    sprites_attributes[16].Pattern = sprites_explosion_anim2[0];
     map_explosion_counter = 0;
     map_state = MAP_STATE_EXPLODING;
 }
@@ -135,10 +136,18 @@ void map_update()
 
     if (map_state == MAP_STATE_EXPLODING)
     {
-        // TODO(step 4c): explosion animation (sprites), driven by
-        //   map_explosion_counter (incremented each frame while exploding):
-        //     u8 g_buildings_explosion_frame = map_explosion_counter >> 2;
-        //     if (g_buildings_explosion_frame > 4) { map_state = MAP_STATE_IDLE; clear sprites 15/16; }
-        //     else { update sprites_attributes[15]/[16] patterns; map_explosion_counter++; }
+        u8 g_buildings_explosion_frame = map_explosion_counter >> 2;
+        if (g_buildings_explosion_frame > 4)
+        {
+            map_state = MAP_STATE_IDLE;
+            sprites_attributes[15].Color = 0;
+            sprites_attributes[16].Color = 0;
+        }
+        else
+        {
+            sprites_attributes[15].Pattern = sprites_explosion_anim1[g_buildings_explosion_frame];
+            sprites_attributes[16].Pattern = sprites_explosion_anim2[g_buildings_explosion_frame];
+            map_explosion_counter++;
+        }
     }
 }

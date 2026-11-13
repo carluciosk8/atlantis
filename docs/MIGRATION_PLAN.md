@@ -13,7 +13,7 @@ and the **ROM/RAM** table at the end of every step.
 - [x] Step 3 — Port frame loop + interrupts + tick counter
 - [x] Step 4a — sprites.c/h (patterns, flip, SAT flush)
 - [x] Step 4b — queue, gorgons, difficulty, lane, wave_start
-- [ ] Step 4c — torpedo, collision, score/city integration
+- [x] Step 4c — torpedo, collision, score/city integration
 - [ ] Step 4d — input stub, wave_finish, full game flow in main
 - [ ] Step 5 — Port music + SFX (Arkos AKM)
 - [ ] Step 6 — Port input
@@ -256,8 +256,10 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   lane and the deathray can be observed.
   Visible: torpedoes, hits, score, destroyed installations, building explosions, the deathray.
 - 4d: `input.c` as a stub (the title auto-advances after the blink, torpedoes auto-fire on a
-  timer, TODO(step 6)); port `wave_finish`; remove the temporary `TestLanesStep4b()` from
-  `atlantis.c` (marked `TODO(step 4d: remove)`); rebuild the full game flow in `main`.
+  timer, TODO(step 6)); call the already ported `wave_finish()` from the game flow (ported in 4b,
+  finished in 4c); remove the temporary `TestLanesStep4b()` from `atlantis.c` (marked
+  `TODO(step 4d: remove)`) and move the auto-fire stand-in into the input stub; rebuild the full
+  game flow in `main`.
   Visible: title, wave HUD, gameplay, game over, hi-score screen, end to end. Later waves bring
   bandits and higher speeds.
 - Final verify (after 4d): emulator, side by side with the legacy ROM: gorgons, torpedoes,
@@ -336,7 +338,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 | 3 | 8959 B (0x4000–0x62FE), padded to 32 KB | 213 B (0xC000–0xC0D4) | frame loop + H_TIMI hook + `g_FrameCounter` (+1 B); water/generator animation live |
 | 4a | 10366 B (0x4000–0x687D), padded to 32 KB | 281 B (0xC000–0xC118) | sprites.c/h: 29 patterns (938 B sprite data in ROM) + `sprites_attributes[17]` (68 B RAM); temp sprite test in atlantis.c |
 | 4b | 12243 B (0x4000–0x6FD2), padded to 32 KB | 485 B (0xC000–0xC1E5) | queue/gorgons/difficulty/lane + `wave_start`; `rand()`/signed+unsigned div+mod pulled from z80.lib; temp lane test in atlantis.c |
-| 4c | | | |
+| 4c | 13696 B (0x4000–0x757F), padded to 32 KB | 489 B (0xC000–0xC1E9) | torpedo.c/h + collision.c/h ported (stubs removed from lane.c); score/city/deathray integration; temp auto-fire stand-in in atlantis.c |
 | 4d | | | |
 | 5 | | | |
 | 6 | | | |
@@ -459,3 +461,63 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   rebuild are TODO(step 4c). `hud_draw_hi_score`/`hud_draw_game_over`/`wave_draw_hud`
   now flush the SAT + `map_update()` (+ `lane_update_all()` for game-over); only the
   `torpedo_update_all()` / `collision_handle_torpedos()` lines remain TODO(step 4c).
+
+- **Step 4c — signedness: plain `char` is UNSIGNED in the MSXgl build.** The MSXgl
+  build tool composes the SDCC command line in `compiler.js:79` as
+  `sdcc -c -mz80 -DTARGET=… -DROM_SIZE=… -DMSX_VERSION=… -I… ${CompileOpt} <file>`,
+  where `CompileOpt` defaults to `""` (`default_config.js:236`) and `project_config.js`
+  does not override it. No `--fsigned-char` is passed, and SDCC 4.6.0's default is
+  unsigned `char` (`sdcc --help`: "`--fsigned-char` — Make 'char' signed by default",
+  i.e. unsigned is the default). The legacy Makefile passes `--fsigned-char`, so the
+  two builds differ. **However, a grep of both the legacy (`src/`) and the new code
+  found no plain `char` used for signed values** — only `unsigned char` (tileset
+  data). Every signed value (torpedo `dx`/`dy`, `v`, `wave_velocities`,
+  `g_wave_size`, collision `dx`/`dy`) is `int8_t` (legacy) / `i8` (new), which is
+  `signed char` regardless of the flag. So nothing depends on the legacy signedness;
+  no build flag change is needed and no code had to be altered. (Keep this in mind
+  for any future hand-written code.)
+
+- **Step 4c — build config change.** `project_config.js` `AddSources` now also lists
+  `"torpedo.c"` and `"collision.c"` (the two modules ported in this step).
+
+- **Step 4c — per-frame load (first step running the whole gameplay logic each
+  frame).** All per-frame work is constant-time, no nested loops:
+  `lane_update_all` = 4 lanes; `torpedo_update_all` = 2 torpedoes;
+  `collision_handle_torpedos` = 2 torpedoes × 4 lanes = 8 checks (unrolled, the
+  "torpedoes×gorgons×lanes" worst case is exactly 8); `collision_handle_deathray`
+  runs at most once per frame (only the attacking lane calls it);
+  `sprites_flush` = one 68-byte VRAM write; `map_update` = a few fixed tile writes.
+  The only modulo/division in the per-frame path are power-of-two (`% 2`, `% 16`,
+  `% 32` in the auto-fire stand-in and map animation → compile to AND/mask, no
+  library call). The non-power-of-two modulos (`rand() % 100`, `% 6`) live in
+  `difficulty.c`, which only runs inside `wave_start()` (once per wave), not per
+  frame. No multiplication in the hot path (the `13*4`-style constants are
+  compile-time). No optimisation was done, per the plan.
+
+- **Step 4c — `wave_finish()` already existed** in `wave.c` (ported in 4b); this step
+  only resolved its TODO (installation rebuild via `collision.c`'s
+  `left_index`/`right_index`). Nothing remains to port in `wave_finish` itself; 4d
+  only has to *call* it from the game flow (the `while (g_wave_size > 0)` loop +
+  `wave_finish()` in `main.c`).
+
+- **Step 4c — temporary auto-fire stand-in.** `TestAutoFire()` in `atlantis.c`,
+  gated by `#define TEST_AUTOFIRE 1` (top of `atlantis.c`), fires a torpedo every 32
+  frames alternating the left/right launchers, using the real `torpedo_fire()` and
+  the real `torpedo_current` slot. Every line is `TODO(step 6: remove)`. With
+  `TEST_AUTOFIRE 0`, nothing fires, gorgons reach the last lane and the deathray can
+  be observed. `TestLanesStep4b()` (still `TODO(step 4d: remove)`) now inits
+  collision/score/torpedo and calls `torpedo_update_all()` +
+  `collision_handle_torpedos()` in the frame loop, matching the legacy `main()` order.
+
+- **Step 4c — what `TestLanesStep4b()` still cannot show.** It runs only wave 1, so:
+  no later waves (no `wave_finish()` call, so no wave counter advance, no
+  installation rebuild), no bandits (wave 1 has `difficulty_bandit_prob = 0`), no
+  title screen, no game-over / hi-score screens, and no music. The deathray IS
+  reachable (a gorgon reaching lane 3 sweeps it across the installations and can end
+  the wave by setting `g_wave_size = 0`), but the loop then just idles — the 4d game
+  flow will call `wave_finish()` there.
+
+- **Step 4c — resolved from the 4b "not exercised" list.** Observed in the emulator in 4c:
+  torpedo hits, small and big explosions caused by collisions, the last lanes, the deathray,
+  and the destruction and explosion of installations. Still not observed: the end of a wave
+  and later waves, bandits, speed variation, the title/game-over/hi-score screens (4d), music (5).

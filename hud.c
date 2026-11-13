@@ -1,9 +1,11 @@
 #include "hud.h"
 
 #include "city.h"
+#include "collision.h"
 #include "lane.h"
 #include "sprites.h"
 #include "tiles.h"
+#include "torpedo.h"
 
 
 const u8 title_tiles_line1[] = { 0, 1 };
@@ -54,8 +56,8 @@ void hud_draw_game_over()
         sprites_flush();
         map_update();
         lane_update_all();
-        // TODO(step 4c): torpedo_update_all();
-        // TODO(step 4c): collision_handle_torpedos();
+        torpedo_update_all();
+        collision_handle_torpedos();
     }
 
     // Clear all 17 sprite attributes then flush the SAT.

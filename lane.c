@@ -1,34 +1,16 @@
 #include "lane.h"
 
 #include "city.h"      // g_FrameCounter (deathray animation)
-#include "collision.h" // collision_handle_deathray (stub, Step 4c)
+#include "collision.h" // collision_handle_deathray
 #include "gorgons.h"
 #include "sprites.h"
 #include "tiles.h"     // set_border
-#include "torpedo.h"   // torpedo_t / torpedos (stub, Step 4c)
+#include "torpedo.h"   // torpedos[] (deactivate a torpedo on hit)
 #include "wave.h"
 
 
 u8 g_is_attacking = 0;
 lane_t g_lanes[4];
-
-
-//-----------------------------------------------------------------------------
-// Step 4c stubs: torpedo.c and collision.c are not ported yet. lane.c only needs
-// torpedos[] (to deactivate a torpedo in lane_start_state_exploding) and
-// collision_handle_deathray() (a no-op until collisions exist). Both move into
-// their real modules in Step 4c.
-// TODO(step 4c: remove)
-torpedo_t torpedos[2] = {
-    { &sprites_attributes[8], 0, 0, 0, 0 },
-    { &sprites_attributes[9], 0, 0, 0, 0 },
-};
-
-// TODO(step 4c: remove, moves to collision.c)
-void collision_handle_deathray(u8 x, i8 v)
-{
-    x; v;   // no-op until Step 4c
-}
 
 
 void lane_init(u8 n)

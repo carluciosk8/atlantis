@@ -92,6 +92,8 @@ Video and interrupts
 C (SDCC)
 - char = 8 bits, int = 16 bits, long = 32 bits, pointers = 16 bits. Prefer
   uint8_t/uint16_t. Beware integer promotion.
+- Plain `char` is UNSIGNED in the MSXgl build (SDCC 4.6.0 default; the legacy Makefile used
+  --fsigned-char). Use `int8_t` / `i8` for every signed 8-bit value, never plain `char`.
 - No hardware multiply or divide: use shifts, masks and tables. No float or long
   in hot code. No printf, stdio or malloc.
 - Locals live on a small stack: no large local arrays, no recursion.

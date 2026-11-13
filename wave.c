@@ -1,12 +1,14 @@
 #include "wave.h"
 
 #include "city.h"
+#include "collision.h"
 #include "difficulty.h"
 #include "gorgons.h"
 #include "lane.h"
 #include "score.h"
 #include "sprites.h"
 #include "tiles.h"
+#include "torpedo.h"
 
 
 u8 wave_gorgons[WAVE_MAX_SIZE];
@@ -39,7 +41,7 @@ void wave_draw_hud()
         Halt();
         sprites_flush();
         map_update();
-        // TODO(step 4c): torpedo_update_all();
+        torpedo_update_all();
     }
 
     // Restore the map tiles that the "WAVE" text overwrote (same as legacy: it
@@ -76,13 +78,13 @@ void wave_finish()
         score_credits--;
     }
 
-    // TODO(step 4c): rebuild installations at the current wave edges using
-    //   collision.c's left_index / right_index:
-    //   while (score_credits > 0 && left_index > 1 && right_index < 6)
-    //   {
-    //       if (score_credits > 0 && left_index > 1)  { left_index--;  map_create_instalation(left_index);  score_credits--; }
-    //       if (score_credits > 0 && right_index < 6) { right_index++; map_create_instalation(right_index); score_credits--; }
-    //   }
+    // Rebuild installations at the current wave edges (collision.c's
+    // left_index / right_index), spending one score credit per installation.
+    while (score_credits > 0 && left_index > 1 && right_index < 6)
+    {
+        if (score_credits > 0 && left_index > 1)  { left_index--;  map_create_instalation(left_index);  score_credits--; }
+        if (score_credits > 0 && right_index < 6) { right_index++; map_create_instalation(right_index); score_credits--; }
+    }
 
     wave_text[8]++;
     if (wave_text[8] > '9')
