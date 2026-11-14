@@ -14,7 +14,7 @@ and the **ROM/RAM** table at the end of every step.
 - [x] Step 4a — sprites.c/h (patterns, flip, SAT flush)
 - [x] Step 4b — queue, gorgons, difficulty, lane, wave_start
 - [x] Step 4c — torpedo, collision, score/city integration
-- [ ] Step 4d — input stub, wave_finish, full game flow in main
+- [x] Step 4d — input stub, wave_finish, full game flow in main
 - [ ] Step 5 — Port music + SFX (Arkos AKM)
 - [ ] Step 6 — Port input
 - [ ] Step 7 — Port RNG (rand/srand)
@@ -339,7 +339,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 | 4a | 10366 B (0x4000–0x687D), padded to 32 KB | 281 B (0xC000–0xC118) | sprites.c/h: 29 patterns (938 B sprite data in ROM) + `sprites_attributes[17]` (68 B RAM); temp sprite test in atlantis.c |
 | 4b | 12243 B (0x4000–0x6FD2), padded to 32 KB | 485 B (0xC000–0xC1E5) | queue/gorgons/difficulty/lane + `wave_start`; `rand()`/signed+unsigned div+mod pulled from z80.lib; temp lane test in atlantis.c |
 | 4c | 13696 B (0x4000–0x757F), padded to 32 KB | 489 B (0xC000–0xC1E9) | torpedo.c/h + collision.c/h ported (stubs removed from lane.c); score/city/deathray integration; temp auto-fire stand-in in atlantis.c |
-| 4d | | | |
+| 4d | 13771 B (0x4000–0x75CA), padded to 32 KB | 489 B (0xC000–0xC1E9) | input.c/h stub (handle_input + wait_fire_button); full game flow in main (title → wave loop → game over → hi-score); temp tests removed |
 | 5 | | | |
 | 6 | | | |
 | 7 | | | |
@@ -521,3 +521,51 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   torpedo hits, small and big explosions caused by collisions, the last lanes, the deathray,
   and the destruction and explosion of installations. Still not observed: the end of a wave
   and later waves, bandits, speed variation, the title/game-over/hi-score screens (4d), music (5).
+
+- **Step 4d — input stub lives in `input.c`/`input.h`.** `handle_input()` holds the
+  auto-fire stand-in (moved from `atlantis.c` `TestAutoFire()`), gated by `TEST_AUTOFIRE`
+  (defined in `input.h`, default 1) and `wait_fire_button()` waits `WAIT_FIRE_FRAMES` (180,
+  defined in `input.c`) via `Halt()`. Both functions are `TODO(step 6)`. Step 6 only changes
+  their bodies; nothing else calls them except the game flow (`atlantis.c` main loop → 
+  `handle_input`, `hud.c` title screen → `wait_fire_button`).
+
+- **Step 4d — build config change.** `project_config.js` `AddSources` now also lists
+  `"input.c"` (the stub module created in this step).
+
+- **Step 4d — `TEST_FORCE_HISCORE` (0 by default) must set the hi-score *strictly below*
+  "000000".** `score_check_hi()` (score.c) does a strict lexicographic `>` over the 6 ASCII
+  digits; a score of "000000" ties an all-'0' hi-score and returns 0. The test aid therefore
+  sets `hud[23..28]` to spaces (0x20), which sort below every digit ('0' = 0x30), so the
+  "000000" score beats it and the hi-score branch is reached even with `TEST_AUTOFIRE 0`
+  (score stays 0). It is `TODO(step 6: remove)`.
+
+- **Step 4d — `map_init()` moved inside the endless loop** (was at boot in the 4a-4c test
+  scaffolding). The legacy order is now `collision_init → lane_init_all → map_init →
+  score_init → torpedo_init_all → wave_init` per outer-loop iteration, so the HUD (and the
+  hi-score row) redraw and the cyan map border are re-established each game. The title
+  screen sets the border back to black (`draw_title_screen` → `VDP_SetColor2(1,1)`).
+
+- **Step 4d — game-over condition.** The legacy `main` ends the wave loop when
+  `!(left_index <= right_index || map_have_installation[0])`, i.e. when every installation is
+  destroyed: the deathray has swept from both edges so `left_index > right_index`, and the
+  centre installation 0 is gone (`map_have_installation[0] == 0`). With `TEST_AUTOFIRE 0`
+  (no torpedoes) this is the *only* way the wave ends, so the game always reaches game-over.
+  The new loop uses the same condition and ends in the same case.
+
+- **Step 4d — flow dependencies left for later steps.** Music sub-song switches
+  (title=1, game=0, game-over=2, hi-score=3 + `mplayer_init_effects` +
+  `ubox_set_user_isr(mplayer_play)`) are `TODO(step 5)` comments. `rand()` stays unseeded
+  (`srand` is `TODO(step 7)` in `wave.c`), so the first game after boot generates the same
+  wave every time (expected). Real input is `TODO(step 6)`. The title screen advances on a
+  180-frame stub wait, not a fire-button press.
+
+- **Step 4d — resolved from the earlier "not observed" lists.** Observed in the emulator in
+  4d: the title screen and its blink, wave progression up to wave 9 with bandits and speed
+  changes, the end of a wave, game over, the hi-score screen (score about 39000 reached with
+  the auto-fire stand-in), and the animation speed matching the legacy. Step 4 is complete.
+  Not observable until later steps: music (5), real input (6), the RNG seed (7).
+
+- **Timing check (resolved).** The frame waits (480 / 270 / 120 frames and the 140-frame title
+  blink) are reachable since 4d and look identical to the legacy in the emulator. Both builds
+  wait with one `halt` per frame, so durations match by construction. No stopwatch measurement
+  was made.
