@@ -15,7 +15,7 @@ and the **ROM/RAM** table at the end of every step.
 - [x] Step 4b — queue, gorgons, difficulty, lane, wave_start
 - [x] Step 4c — torpedo, collision, score/city integration
 - [x] Step 4d — input stub, wave_finish, full game flow in main
-- [ ] Step 5 — Port music + SFX (Arkos AKM)
+- [x] Step 5 — Port music + SFX (Arkos AKM)
 - [ ] Step 6 — Port input
 - [ ] Step 7 — Port RNG (rand/srand)
 - [ ] Step 8 — Remove legacy plumbing, finalize build
@@ -354,7 +354,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 | 4b | 12243 B (0x4000–0x6FD2), padded to 32 KB | 485 B (0xC000–0xC1E5) | queue/gorgons/difficulty/lane + `wave_start`; `rand()`/signed+unsigned div+mod pulled from z80.lib; temp lane test in atlantis.c |
 | 4c | 13696 B (0x4000–0x757F), padded to 32 KB | 489 B (0xC000–0xC1E9) | torpedo.c/h + collision.c/h ported (stubs removed from lane.c); score/city/deathray integration; temp auto-fire stand-in in atlantis.c |
 | 4d | 13771 B (0x4000–0x75CA), padded to 32 KB | 489 B (0xC000–0xC1E9) | input.c/h stub (handle_input + wait_fire_button); full game flow in main (title → wave loop → game over → hi-score); temp tests removed |
-| 5 | | | |
+| 5 | 17227 B (0x4000–0x834A), padded to 32 KB | 491 B (0xC000–0xC1EB) + 1108 B song @0xD000 + 283 B SFX @0xE000 + 275 B Arkos @0xF000 | music + SFX: `arkos/akm_player` module, song/SFX copied to RAM at boot; merged H_TIMI hook (frame counter + AKM_Update); music.c/h helpers; RAM +2 B (g_AKM_Playing, g_AKM_EndOfSong) |
 | 6 | | | |
 | 7 | | | |
 | 8 | | | |
@@ -583,3 +583,49 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   blink) are reachable since 4d and look identical to the legacy in the emulator. Both builds
   wait with one `halt` per frame, so durations match by construction. No stopwatch measurement
   was made.
+
+- **Step 5 — build config changes.** `project_config.js`: `LibModules` now adds
+  `"arkos/akm_player"` and `AddSources` adds `"music.c"`. `msxgl_config.h`:
+  `ARKOS_SFX_START_IDX` changed `0 → 1` (the header default is 1; the game uses
+  effect numbers 1–5, matching the legacy 1-based `mplayer_play_effect`).
+  `ARKOS_BUFFER_ADDR=0xF000` and `ARKOS_ISR_PROTECTION=FALSE` are unchanged.
+
+- **Step 5 — music architecture.** `AKM_Update()` runs from the H_TIMI hook, merged with the
+  frame counter, as decided (see "Step 5 decisions"). The hook is a `__naked` function in
+  `atlantis.c`:
+  `push af / ld hl,#_g_FrameCounter / inc (hl) / call _AKM_Update / pop af / ret`.
+  The frame-counter increment is inlined in asm (`inc (hl)`, equivalent to `g_FrameCounter++`
+  on a `volatile u8`) rather than a separate C "hook body", to keep the ISR path short. The
+  generated assembly (`out/atlantis.asm`, `_MusicFrameHook`) was checked: `push af`/`pop af`
+  surround the body, so A (=S#0) is preserved as the legacy `ubox_isr` did.
+
+- **Step 5 — main-loop calls race with the hook, so they are wrapped.** `music_play()` and
+  `sfx_play()` (in `music.c`) wrap `AKM_Play`/`AKM_PlaySFX` in `DisableInterrupt()`/
+  `EnableInterrupt()`. `music_init()` is NOT wrapped: it runs before the hook is installed,
+  so no `AKM_Update` can race with it. `AKM_InitSFX` is therefore only called from `music_init()`
+  (before the hook), satisfying the header's "before the first sound effect" rule.
+
+- **Step 5 — MSXbin commands (run from the repo root, tool at
+  `../MSXgl/tools/MSXtk/bin/MSXbin`).** `MSXbin assets/sfx/song.akm -t g_SongData -ad -o song.h`
+  (1108 B) and `MSXbin assets/sfx/effects.akx -t g_SFXData -ad -o effects.h` (283 B). The
+  generated arrays are `const unsigned char g_SongData[]` / `const unsigned char g_SFXData[]`
+  (i.e. `const u8`). The Linux `MSXbin` exits with a nonzero code (84 / 27) even on success —
+  check the "Total bytes" comment and the file, not the exit code.
+
+- **Step 5 — assets are position-dependent (verified).** Both binaries contain absolute
+  16-bit little-endian pointers. `song.akm` header pointers (0xD00E, 0xD0B7, 0xD0D1, 0xD3AA…)
+  all fall inside 0xD000–0xD454; `effects.akx` has 7 SFX pointers (0xE00E, 0xE03F, 0xE04B,
+  0xE071, 0xE0AB, 0xE0E9, 0xE118) all inside 0xE000–0xE11B. They must be copied to exactly
+  0xD000 / 0xE000 (done by `music_init()`).
+
+- **Step 5 — RAM grew +2 B for the player flags.** The `akm_player` module adds two globals,
+  `g_AKM_Playing` (0xC1EA) and `g_AKM_EndOfSong` (0xC149), bringing the game RAM to
+  491 B (0xC000–0xC1EB). The Arkos work area at 0xF000 is allocated by absolute `ARKOS_ADDR`
+  equates in `akm_player.asm` (not by the linker), so it is invisible in `out/atlantis.map` and
+  must be kept clear manually — nothing else overlaps it.
+
+- **Step 5 — `arkos/akm_player` has no `psg` dependency.** The player writes the PSG ports
+  directly (`out (0xa0)` / `out (0xa1)`), so adding `"psg"` to `LibModules` is not required
+  (mirrors `s_arkos.js`, which lists the arkos module without `psg`).
+
+- **Step 5 — verified in the emulator.** Music (sub-songs 0-3), the five effects and the music continuing through the frame waits sound like the legacy ROM. The ROM now crosses 0x8000 (ends at 0x834A), the first step to use page 2; it works in the emulator. Confirmed: the `ROM_32K` crt0 sets the page 2 slot equal to the page 1 slot (`INIT_P1_TO_P2`, `crt0_rom32.asm:58-59`) before `main`, so code and data above 0x8000 are reachable on a real machine. Open items: HIMEM on machines with a disk interface (see "Step 5 decisions").

@@ -495,7 +495,7 @@
 // Arkos Tracker options
 #define ARKOS_BUFFER_ADDR			0xF000	// Replayer working area address in RAM
 #define ARKOS_ISR_PROTECTION		FALSE	// Prevent interruption during audio update
-#define ARKOS_SFX_START_IDX			0		// Do SFX indexes start at 0 or 1? Default is 0 but Arkos Tracker use 1
+#define ARKOS_SFX_START_IDX			1		// Do SFX indexes start at 0 or 1? Default is 0 but Arkos Tracker use 1 (game uses effect numbers 1-5)
 #define ARKOS_USE_EVENT				FALSE	// Support for event callback function (AKG replayer only)
 
 // NDP player options

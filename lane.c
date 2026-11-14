@@ -3,6 +3,7 @@
 #include "city.h"      // g_FrameCounter (deathray animation)
 #include "collision.h" // collision_handle_deathray
 #include "gorgons.h"
+#include "music.h"
 #include "sprites.h"
 #include "tiles.h"     // set_border
 #include "torpedo.h"   // torpedos[] (deactivate a torpedo on hit)
@@ -80,7 +81,7 @@ void lane_execute_state_moving(lane_t* lane)
 
     if (g_is_attacking && !lane->next)
     {
-        // TODO(step 5): mplayer_play_effect(2, 0, 0)  →  AKM_PlaySFX(2, 0, 0)
+        sfx_play(2, 0, 0);
         sprites_update_deathray(lane->sprite1->X, g_FrameCounter % 4);
         collision_handle_deathray(lane->sprite1->X, wave_velocities[lane->wave_index]);
     }
@@ -145,10 +146,10 @@ void lane_start_state_exploding(u8 torpedo, u8 lane, u8 is_big)
     {
         sprites_set_magnification(true);
         g_lanes[lane].state = 4*LANE_STATE_EXPLODING;
-        // TODO(step 5): mplayer_play_effect_p(4, 1, 0)  →  AKM_PlaySFX(4, 1, 0)
+        sfx_play(4, 1, 0);
     }
     else
     {
-        // TODO(step 5): mplayer_play_effect(3, 1, 0)  →  AKM_PlaySFX(3, 1, 0)
+        sfx_play(3, 1, 0);
     }
 }

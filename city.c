@@ -2,6 +2,7 @@
 
 #include "hud.h"
 #include "lane.h"
+#include "music.h"
 #include "sprites.h"
 #include "tiles.h"
 
@@ -100,7 +101,7 @@ void map_destroy_instalation(u8 index)
     map_have_installation[index] = 0;
     g_is_attacking = 0;
     sprites_disable_deathray();
-    // TODO(step 5): mplayer_play_effect_p(5, 0, 0);  →  AKM_PlaySFX(5, 0, 0)
+    sfx_play(5, 0, 0);
 }
 
 

@@ -1,5 +1,6 @@
 #include "torpedo.h"
 
+#include "music.h"
 #include "sprites.h"
 
 
@@ -53,7 +54,7 @@ void torpedo_update_all()
 
 void torpedo_fire(u8 pattern, u8 x, u8 y, i8 dx, i8 dy)
 {
-    // TODO(step 5): mplayer_play_effect(1, 2, 0)  →  AKM_PlaySFX(1, 2, 0)
+    sfx_play(1, 2, 0);
     torpedos[torpedo_current].sprite->Pattern = pattern;
     torpedos[torpedo_current].is_active = 1;
     torpedos[torpedo_current].sprite->X = x;

@@ -1,11 +1,12 @@
 // ____________________________
-//  Atlantis — MSXgl (Step 4d: full game flow)
+//  Atlantis — MSXgl (Step 5: music + SFX)
 //
 //  Sets Screen 2, loads the tileset and sprite patterns, installs the vblank
-//  H_TIMI hook, and runs the full legacy game flow: title screen, wave loop
+//  H_TIMI hook (which increments the frame counter and advances the Arkos AKM
+//  music player), and runs the full legacy game flow: title screen, wave loop
 //  (lanes, torpedoes, collisions, score, building explosions, deathray), game
-//  over and hi-score screens, looping forever. Input is a stub (Step 6) and
-//  music is left as TODO(step 5) comments.
+//  over and hi-score screens, looping forever. Input is a stub (Step 6) and the
+//  RNG seed is still pending (Step 7).
 //─────────────────────────────────────────────────────────────────────────────
 
 //=============================================================================
@@ -13,11 +14,14 @@
 //=============================================================================
 #include "msxgl.h"
 
+#include "arkos/akm_player.h"   // AKM_Update (called by the H_TIMI hook)
+
 #include "city.h"
 #include "collision.h"
 #include "hud.h"
 #include "input.h"
 #include "lane.h"
+#include "music.h"
 #include "score.h"
 #include "sprites.h"
 #include "tiles.h"
@@ -41,11 +45,22 @@
 volatile u8 g_FrameCounter;
 
 //-----------------------------------------------------------------------------
-// H_TIMI hook: called by the BIOS KEYINT ISR once per vblank. Keep it short and
-// do not touch the VDP here (the BIOS reads VDP status before calling it).
-static void FrameCounterHook(void)
+// H_TIMI hook: called by the BIOS KEYINT ISR once per vblank. Increments the
+// frame counter, then advances the music player. The BIOS KEYINT has already
+// saved all registers around the hook, but expects A (a copy of VDP status
+// register S#0) to be preserved for STATFL, so this __naked wrapper pushes AF
+// around its work (matching the legacy ubox_isr's push af / pop af). It must
+// not touch the VDP.
+static void MusicFrameHook(void) __naked
 {
-	g_FrameCounter++;
+	__asm
+		push	af
+		ld		hl, #_g_FrameCounter
+		inc		(hl)
+		call	_AKM_Update
+		pop		af
+		ret
+	__endasm;
 }
 
 //-----------------------------------------------------------------------------
@@ -59,27 +74,26 @@ void main(void)
 	init_tiles();
 	init_sprites();      // 16x16 mode + sprite patterns (after ClearVRAM)
 
-	// Enable the vblank interrupt, then install the H_TIMI hook that increments
-	// the frame counter. The 4-byte hook write is done with interrupts disabled
-	// so a vblank cannot run a half-written hook (BIOS_SetHookCallback /
-	// BIOS_SetHookInterSlotCallback do not DI/EI themselves).
+	// Enable the vblank interrupt, then initialise the music player (copy the
+	// song/SFX to 0xD000/0xE000, start the game sub-song) and finally install
+	// the merged H_TIMI hook that increments the frame counter and advances the
+	// music. The hook is installed only after the player is initialised, and the
+	// 4-byte hook write is done with interrupts disabled so a vblank cannot run
+	// a half-written hook (BIOS_SetHookCallback / BIOS_SetHookInterSlotCallback
+	// do not DI/EI themselves).
 	g_FrameCounter = 0;
 	VDP_EnableVBlank(TRUE);
+	music_init();
 	DisableInterrupt();
-	BIOS_SetHookCallback(H_TIMI, FrameCounterHook);
+	BIOS_SetHookCallback(H_TIMI, MusicFrameHook);
 	EnableInterrupt();
-
-	// Music boot setup (legacy main.c:30-32).
-	// TODO(step 5): mplayer_init(SONG, 0);            →  AKM_Play(0, (void*)0xD000);
-	// TODO(step 5): mplayer_init_effects(EFFECTS);    →  AKM_InitSFX((void*)0xE000);
-	// TODO(step 5): ubox_set_user_isr(mplayer_play);  →  AKM_Update() per frame (Step 5);
 
 	for (;;)
 	{
-		// TODO(step 5): mplayer_init(SONG, 1);  →  AKM_Play(1, (void*)0xD000);
+		music_play(1);
 		hud_show_title_screen();
 
-		// TODO(step 5): mplayer_init(SONG, 0);  →  AKM_Play(0, (void*)0xD000);
+		music_play(0);
 
 		collision_init();
 		lane_init_all();
@@ -115,12 +129,12 @@ void main(void)
 			wave_finish();
 		}
 
-		// TODO(step 5): mplayer_init(SONG, 2);  →  AKM_Play(2, (void*)0xD000);
+		music_play(2);
 		hud_draw_game_over();
 
 		if (score_check_hi())
 		{
-			// TODO(step 5): mplayer_init(SONG, 3);  →  AKM_Play(3, (void*)0xD000);
+			music_play(3);
 			score_promote_hi();
 			hud_draw_hi_score();
 		}
