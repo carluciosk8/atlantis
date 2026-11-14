@@ -3,12 +3,6 @@
 #include "gorgons.h"
 #include "wave.h"
 
-// The embedded SDCC's <stdlib.h> is not on the default include path (the build
-// tool adds -I tools/ but not -I tools/sdcc/include), so declare the prototype
-// here instead. rand() links from the SDCC standard library (z80.lib).
-// TODO(step 7): replace rand() with Math_GetRandom8() / Math_GetRandomMax8().
-int rand(void);
-
 
 u8 difficulty_t1;
 u8 difficulty_t2;
@@ -66,7 +60,7 @@ void difficulty_adjust(u8* p_wave)
 
 u8 difficulty_get_random_speed()
 {
-    u8 rnd = rand() % 100;
+    u8 rnd = (u8)(Math_GetRandom16() % 100);
     
     if (rnd < difficulty_t1) return 2;
     else if (rnd < difficulty_t2) return 3;
@@ -76,11 +70,11 @@ u8 difficulty_get_random_speed()
 
 u8 difficulty_get_random_gorgon()
 {
-    u8 rnd = rand() % 100;
+    u8 rnd = (u8)(Math_GetRandom16() % 100);
 
     if (rnd < difficulty_bandit_prob)
     {
-        return GORGON_ID_BANDIT_RIGHT + rand() % 2;
+        return GORGON_ID_BANDIT_RIGHT + (u8)(Math_GetRandom16() % 2);
     }
-    return rand() % GORGON_ID_BANDIT_RIGHT;
+    return (u8)(Math_GetRandom16() % GORGON_ID_BANDIT_RIGHT);
 }

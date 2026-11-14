@@ -54,7 +54,7 @@ void wave_draw_hud()
 
 void wave_start()
 {
-    // TODO(step 7): srand(ubox_tick)  →  Math_SetRandomSeed16(g_FrameCounter).
+    Math_SetRandomSeed16(g_FrameCounter);
     difficulty_adjust(&wave_text[6]);
     for (i8 i = 0; i < g_wave_size; i++)
     {

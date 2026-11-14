@@ -17,7 +17,7 @@ and the **ROM/RAM** table at the end of every step.
 - [x] Step 4d — input stub, wave_finish, full game flow in main
 - [x] Step 5 — Port music + SFX (Arkos AKM)
 - [x] Step 6 — Port input
-- [ ] Step 7 — Port RNG (rand/srand)
+- [x] Step 7 — Port RNG (rand/srand)
 - [ ] Step 8 — Remove legacy plumbing, finalize build
 
 Legacy `Makefile` must keep working until step 8.
@@ -128,9 +128,8 @@ Stack room: with HIMEM = 0xF380, about 620 bytes between the stack top and the e
 | `mplayer_play_effect_p(no,chan,vol)` | **none** → `sfx_play` (priority dropped, settled). |
 
 ### RNG
-- `srand(seed)` → `Math_SetRandomSeed16(u16 seed)` (`math.h:377`).
-- `rand()` → `Math_GetRandom8()` (`math.h:324`), `Math_GetRandomMax8(max)` (`math.h:334`).
-  (Or keep SDCC `rand()` if it links.)
+| `srand(seed)` | `Math_SetRandomSeed16(u16 seed)` (`math.h:377`), seed 0 is handled. |
+| `rand()` | `Math_GetRandom16()` (16-bit xorshift). NOT `Math_GetRandom8()`: it is non-deterministic and `% 100` is biased (see "Step 7 decisions"). |
 
 ---
 
@@ -344,8 +343,18 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - Open: `INPUT_USE_JOYSTICK`, `INPUT_USE_MOUSE` and `INPUT_USE_DETECT` could be set to FALSE for about 149 B of ROM and 3 B of RAM. Left on in Step 6; decide in Step 8.
 
 ### Step 7 — RNG
-- `srand`/`rand` → `Math_SetRandomSeed16` / `Math_GetRandom8` / `Math_GetRandomMax8`.
-- Verify: emulator — wave generation still behaves.
+- Replace `rand()` / `srand()` with the 16-bit generator of the MSXgl `math` module: `Math_GetRandom16()` and `Math_SetRandomSeed16()` (see "Step 7 decisions"). Add `"math"` to `LibModules`. Remove the hand-written `int rand(void);` declaration.
+- Verify: emulator — waves are generated and difficulty ramps (speeds, bandits) like the legacy.
+
+### Step 7 decisions
+(From the read-only analysis of Step 7.)
+- The goal is a uniform generator, not the legacy sequence. Use the 16-bit generator of the MSXgl `math` module: `Math_SetRandomSeed16(u16 seed)` (`math.h:377`, seed 0 is mapped to 0x7FFF) and `Math_GetRandom16()`. It is a deterministic xorshift16 with period 65535.
+- Do NOT use `Math_GetRandom8()` / `Math_GetRandomMax8()`: the 8-bit generator reads the Z80 R register (not deterministic, not seeded by `Math_SetRandomSeed16`) and only covers 0..255, so `% 100` is biased (`P(rnd < 50)` = 58.6% instead of 50%, bandit rate 15% → 17.6%). It would change the difficulty balance.
+- Uses in the game (all in `difficulty.c`): `% 100` for the speed and the bandit gate, `% 2` for the bandit side, `% GORGON_ID_BANDIT_RIGHT` (= 4) for the gorgon type. With the 16-bit generator `% 100` stays within 0.03 pp of uniform, and `% 2` and `% 4` are exactly uniform. Keep the `%` expressions; cast so that the `%` uses a 16-bit value, not a truncated 8-bit one.
+- Seed: once per wave in `wave_start`, `Math_SetRandomSeed16(g_FrameCounter)` (legacy: `srand(ubox_tick)`, 256 possible seeds, same semantics).
+- Build: add `"math"` to `LibModules` (no `math.c` project file exists, so there is no basename collision). `RANDOM_16_METHOD` is already `RANDOM_16_XORSHIFT` in `msxgl_config.h`. ROM cost about +49 B compared with SDCC `rand` (the whole `math.rel` is linked). No RAM change.
+- Wave layouts will not match the legacy sequence, and that is accepted. What must match: difficulty ramp, bandit rate (about 15% in waves 2-4, 20% from wave 5) and the speed split.
+- Note for the record: the legacy `rand() % 100` and the new `Math_GetRandom16() % 100` differ by at most 0.03 pp.
 
 ### Step 8 — Remove legacy plumbing, finalize
 - Delete `src/crt0.z80`, `src/akm.z80`, `src/song.asm`, `src/effects.asm`,
@@ -369,7 +378,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 | 4d | 13771 B (0x4000–0x75CA), padded to 32 KB | 489 B (0xC000–0xC1E9) | controls.c/h stub (handle_input + wait_fire_button); full game flow in main (title → wave loop → game over → hi-score); temp tests removed |
 | 5 | 17227 B (0x4000–0x834A), padded to 32 KB | 491 B (0xC000–0xC1EB) + 1108 B song @0xD000 + 283 B SFX @0xE000 + 275 B Arkos @0xF000 | music + SFX: `arkos/akm_player` module, song/SFX copied to RAM at boot; merged H_TIMI hook (frame counter + AKM_Update); music.c/h helpers; RAM +2 B (g_AKM_Playing, g_AKM_EndOfSong) |
 | 6 | 17496 B (0x4000–0x8457), padded to 32 KB | 495 B (0xC000–0xC1EF) | real input: `input` module (keyboard + joystick + mouse + detect) + `controls.c`; key click off via `BIOS_SetKeyClick(FALSE)`; RAM +4 B (3 mouse globals + `last_trigger`) |
-| 7 | | | |
+| 7 | 17541 B (0x4000–0x8484), padded to 32 KB | 495 B (0xC000–0xC1EF) | RNG: added `math` module (`Math_GetRandom16`/`Math_SetRandomSeed16`), removed SDCC `rand`/`srand` (`rand.rel`); ROM +45 B, RAM unchanged (rand 4 B state → math 4 B state) |
 | 8 | | | |
 
 ---
@@ -461,7 +470,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   (`share/sdcc/include/stdlib.h:51`), so `rand() % N` produces values in the same
   `[0,N-1]` range in both; the exact sequence may differ between SDCC versions but
   `srand` is never called, so waves repeat identically every boot (expected).
-  Step 7 will replace `rand()` with `Math_GetRandom8()`/`Math_GetRandomMax8()`.
+  Step 7 will replace `rand()` with `Math_GetRandom16()`/`Math_GetRandomMax16()`.
 - **Step 4b — collision/torpedo stubs.** `lane.c` is the only consumer in this
   step. It needs two symbols: `collision_handle_deathray(u8 x, i8 v)` (stubbed as a
   no-op in lane.c) and `torpedo_t torpedos[2]` (stubbed in lane.c, `.sprite`
@@ -687,3 +696,44 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   0xC1EF, well below 0xD000. No new compiler warnings.
 
 - **Step 6 — verified in the emulator.** Fire edge, launcher selection, two-torpedo round-robin, title waiting for release, no key click: identical to the legacy ROM. Open: the buffer-full beep with many keys held (`SCNCNT`/`REPCNT` are not zeroed in the hook; no beep was observed [adjust if you did hear one]).
+
+- **Step 7 — build config changes.** `project_config.js`: `LibModules` adds `"math"`
+  (`system,bios,vdp,math,arkos/akm_player,input`). No `msxgl_config.h` change:
+  `RANDOM_16_METHOD` was already `RANDOM_16_XORSHIFT` (line 519). No new source files.
+
+- **Step 7 — RNG ported to the 16-bit MSXgl generator.** `difficulty.c` now calls
+  `Math_GetRandom16()` for all four draws (`% 100` twice, `% 2`, `% GORGON_ID_BANDIT_RIGHT`
+  = `% 4`), each with an explicit `(u8)` cast applied *after* the `%`; `wave.c:wave_start`
+  calls `Math_SetRandomSeed16(g_FrameCounter)` once per wave (legacy `srand(ubox_tick)`).
+  The hand-written `int rand(void);` prototype is gone. No `rand`, `srand`, `ubox` or
+  `mplayer` symbols/calls remain in the new code (only comment references).
+
+- **Step 7 — generated code confirms 16-bit modulo.** In `out/difficulty.asm`:
+  `(u8)(Math_GetRandom16() % 100)` → `call _Math_GetRandom16; ld de,#0x0064; call __moduint`
+  (16-bit **unsigned** modulo library routine, value not truncated to 8 bits first);
+  `% 2` → `ld a,l; and a,#0x01` and `% 4` → `ld a,l; and a,#0x03` (mask, no library call,
+  correct because `% 2`/`% 4` depend only on the low byte of the u16). The old
+  `rand() % N` used `__modsint` (16-bit *signed*); the new `u16 % N` uses `__moduint`.
+
+- **Step 7 — xorshift16 verified (throwaway script `/tmp/opencode/rng_xorshift16_check.py`).**
+  An instruction-by-instruction transcription of the `Math_GetRandom16` asm
+  (`math.c:436-454`, with the `rra` carry semantics) matches the C formulation in the
+  `math.c` comment (`hl ^= hl<<7; hl ^= hl>>9; hl ^= hl<<8`) for all 65536 states.
+  Period = 65535 (no zero state, no early repeat) for seeds 0/1/42/255; seed 0 → `0x7FFF`
+  (no stuck state); all 256 `g_FrameCounter` seeds map to 256 distinct states.
+  Over the first 10,000 outputs the `% 100` counts stay within a few percent of ideal
+  (sampling noise; the exact systematic bias is 0.03 pp, from 65536 % 100 = 36) and
+  `% 2`/`% 4` are uniform. So the difficulty ramp and bandit rate match the legacy
+  distribution (within 0.03 pp), even though the exact wave layouts differ.
+
+- **Step 7 — size.** ROM 17541 B (0x4000–0x8484), +45 B over Step 6. The `math` module is
+  linked **whole** (~190 B code: `Math_Div10`, `Math_Mod10`, `Math_Flip`, `Math_SignedDiv*`,
+  `Math_GetRandom8`, `Math_GetRandom16`, …), because SDCC links at `.rel` granularity — so
+  the unused 8-bit generator (`Math_GetRandom8`/`Math_SetRandomSeed8`, ~24 B code) and its
+  `g_RandomSeed8` (2 B RAM) come along even though the game only uses the 16-bit generator.
+  Removing SDCC `rand.rel` (−143 B) netted +45 B. RAM 495 B (0xC000–0xC1EF), unchanged:
+  the 4 B SDCC `rand` state was replaced by `g_RandomSeed8`+`g_RandomSeed16` (4 B); data
+  still ends at 0xC1EF, below 0xD000. `modsigned`/`divsigned` (`__modsint`/`__divsint`) stay
+  linked — they are used by `queue.c` and `torpedo.c`, not only by RNG. No new compiler warnings.
+
+- **Step 7 — verified in the emulator.** [adjust to what you saw] Waves generate and advance with the legacy ramp (speed split, bandit rate); wave layouts differ from the legacy by design. All `TODO(step N)` markers are resolved. Next: Step 8 (finalise), see the Step 8 section.

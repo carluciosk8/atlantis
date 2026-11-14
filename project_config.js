@@ -13,7 +13,7 @@ ProjName = "atlantis";
 ProjModules = [ ProjName ];
 
 //-- List of library modules to build (array)
-LibModules = [ "system", "bios", "vdp", "arkos/akm_player", "input" ];
+LibModules = [ "system", "bios", "vdp", "math", "arkos/akm_player", "input" ];
 
 //-- Additional project sources to compile and link (array)
 AddSources = [ "tiles.c", "city.c", "hud.c", "wave.c", "score.c", "sprites.c", "queue.c", "gorgons.c", "difficulty.c", "lane.c", "torpedo.c", "collision.c", "controls.c", "music.c" ];
