@@ -57,8 +57,8 @@ Legacy `Makefile` must keep working until step 8.
 - Arkos player buffer at default `ARKOS_BUFFER_ADDR = 0xF000`.
 - `ARKOS_SFX_START_IDX = 1` (game uses effect numbers 1–5).
 - Target: `Target = "ROM_32K"`, `Machine = "1"`.
-- Music update: from the main loop after vblank wait (matches `s_arkos.c`),
-  OR from the H_TIMI hook. Prefer main-loop for simplicity; revisit if needed.
+- Music update: `AKM_Update()` runs from the `H_TIMI` hook, merged with the frame counter
+  (decided in Step 5, see "Step 5 decisions"). It matches the legacy (`ubox_set_user_isr(mplayer_play)`).
 
 ## Target memory map (MSXgl ROM_32K)
 
@@ -70,6 +70,8 @@ Legacy `Makefile` must keep working until step 8.
 | SFX | 0xE000 (283 B → 0xE11B) |
 | Arkos buffer (`ARKOS_BUFFER_ADDR`) | 0xF000 (275 B) |
 | Stack (HIMEM) | ~0xF380 |
+
+Stack room: with HIMEM = 0xF380, about 620 bytes between the stack top and the end of the Arkos buffer (0xF113). See "Step 5 decisions" for the open HIMEM item.
 
 ---
 
@@ -119,11 +121,11 @@ Legacy `Makefile` must keep working until step 8.
 ### mplayer → Arkos AKM
 | ubox mplayer | MSXgl `arkos/akm_player.h` |
 |---|---|
-| `mplayer_init(song, sub)` | `void AKM_Play(u8 sng, const void* data);` (`:34`). **Arg order swapped** |
-| `mplayer_init_effects(effects)` | `u8 AKM_InitSFX(const void* data);` (`:63`) |
-| `mplayer_play()` | `bool AKM_Update();` (`:52`) |
-| `mplayer_play_effect(no,chan,vol)` | `void AKM_PlaySFX(u8 sfx, u8 chan, u8 vol);` (`:73`) |
-| `mplayer_play_effect_p(no,chan,vol)` | **none** → `AKM_PlaySFX` (priority dropped) |
+| `mplayer_init(song, sub)` | `void AKM_Play(u8 sng, const void* data);` (`:34`). **Arg order swapped**, sub-song is 0-based like the legacy. Wrap in `DisableInterrupt()`/`EnableInterrupt()` (see "Step 5 decisions"); use `music_play()`. |
+| `mplayer_init_effects(effects)` | `u8 AKM_InitSFX(const void* data);` (`:63`), once at boot, before the hook is installed. |
+| `mplayer_play()` | `bool AKM_Update();` (`:52`), called from the merged `H_TIMI` hook (not from the main loop). |
+| `mplayer_play_effect(no,chan,vol)` | `void AKM_PlaySFX(u8 sfx, u8 chan, u8 vol);` (`:73`), needs `ARKOS_SFX_START_IDX=1`; volume 0 = loudest. Wrap in DI/EI; use `sfx_play()`. |
+| `mplayer_play_effect_p(no,chan,vol)` | **none** → `sfx_play` (priority dropped, settled). |
 
 ### RNG
 - `srand(seed)` → `Math_SetRandomSeed16(u16 seed)` (`math.h:377`).
@@ -158,8 +160,7 @@ Legacy `Makefile` must keep working until step 8.
 
 1. **crt0**: do NOT reuse `src/crt0.z80`. MSXgl `ROM_32K` provides crt0 (header,
    slot backup, `SP = HIMEM`, heap/globals init, `call main`).
-2. **Interrupts**: BIOS ISR kept; use `BIOS_SetHookCallback(H_TIMI, …)`. Hook must
-   be short + `volatile`-safe.
+2. **Interrupts**: BIOS ISR kept; one `H_TIMI` hook (`BIOS_SetHookCallback`) runs the frame counter and the music update (see "Step 5 decisions"). The hook must stay short and must not touch the VDP.
 3. **VRAM**: Screen 2 VRAM layout is identical (pattern 0x0000, name 0x1800,
    colour 0x2000, SAT 0x1B00, sprite pattern 0x3800). Prefer `g_ScreenLayoutLow`
    / `g_SpriteAttributeLow` getters + `VDP_*` functions over raw addresses.
@@ -232,7 +233,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - Frame counter: `volatile u8 g_FrameCounter` (8 bits, wraps every 256 frames, like `ubox_tick`), incremented once per vblank by an `H_TIMI` hook installed with `BIOS_SetHookCallback(H_TIMI, cb)` after `VDP_EnableVBlank(TRUE)`. Zero it at boot (legacy `ubox_reset_tick()`, `main.c:23`). Expose it with `extern` for later steps (`wave.c:58` RNG seed, `lane.c:84` deathray animation).
 - Animation: `four_frames_count = (g_FrameCounter % 16) >> 2; two_frames_count = four_frames_count >> 1;` (legacy `city.c:125`).
 - Frame waits: `ubox_wait_vsync()` is a plain `halt` (one vblank per call). Use `Halt()` once per loop iteration. Counts: 480 (`hud.c`, hi-score screen), 270 (`hud.c`, game over screen), 120 (`wave.c`, wave HUD). The title blink is 10 x (7 + 7) = 140 vblanks. At 60 Hz: 8.0 / 4.5 / 2.0 / 2.33 s. At 50 Hz: 9.6 / 5.4 / 2.4 / 2.8 s. No 50/60 Hz compensation, as in the legacy.
-- The hook only increments the counter. It must not touch the VDP and must not call the music player in this step (the music placement is decided in Step 5).
+- The hook only increments the counter. It must not touch the VDP and must not call the music player in this step. (Superseded in Step 5: the same hook also runs `AKM_Update()`)
 - VRAM writes: `VDP_WriteVRAM_16K` and `VDP_Poke_GM2` protect the two-byte address setup with DI/EI (`VDP_ISR_SAFE_DEFAULT`, `msxgl_config.h:112`). Use only MSXgl VDP functions for VRAM access, never raw port writes. (The legacy `ubox_write_vm` / `ubox_put_tile` were not protected.)
 - The BIOS interrupt handler keeps running (keyboard scan, etc.). `BIOS_SetHookCallback` replaces only the empty `H_TIMI` hook, so there is nothing to chain.
 - `ubox_set_user_isr(mplayer_play)` is the music player, so it belongs to Step 5, not here.
@@ -304,12 +305,25 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - The temporary sprite test in `main` (4a) must be removed when 4b starts.
 
 ### Step 5 — Music + SFX (Arkos AKM)
-- Add `"arkos/akm_player"` to `LibModules`; set `ARKOS_BUFFER_ADDR=0xF000`,
-  `ARKOS_SFX_START_IDX=1` in `msxgl_config.h`.
-- MSXbin the two assets → headers; `Mem_Copy` to 0xD000 / 0xE000 at boot.
-- Map mplayer calls per table. Decide ISR vs main-loop update (prefer main-loop).
-- Verify: emulator — music, sub-song switches (title/gameplay/gameover/hiscore),
-  all 5 SFX.
+- Add `"arkos/akm_player"` to `LibModules`; set `ARKOS_SFX_START_IDX=1` in `msxgl_config.h` (`ARKOS_BUFFER_ADDR=0xF000` is already set; keep `ARKOS_ISR_PROTECTION` FALSE).
+- MSXbin the two assets into headers (commands in "Step 5 decisions"); copy them to 0xD000 / 0xE000 at boot with `Mem_Copy`.
+- Add `music.c/h` with helpers (`music_init`, `music_play`, `sfx_play`) and restore every `TODO(step 5)` call through them, following "Step 5 decisions" (hook architecture, DI/EI wrapping, boot order, sub-song and effect numbers).
+- Verify: emulator — music, sub-song switches (title/gameplay/gameover/hiscore), all 5 SFX, music keeps playing during all frame waits.
+
+### Step 5 decisions
+(From the read-only analysis of Step 5. Supersedes the "music placement is decided in Step 5" note of the Step 3 decisions.)
+- Architecture: `AKM_Update()` runs from the `H_TIMI` hook, as in the legacy (`ubox_set_user_isr(mplayer_play)`, `main.c:32`). One merged hook: `g_FrameCounter++` first, then `AKM_Update()` (legacy order, `ubox_isr.z80:47-62`). The return value of `AKM_Update` is ignored. Keep `ARKOS_ISR_PROTECTION` FALSE.
+- Why it is safe (per the grauw interrupts article, not checked against a BIOS disassembly): the BIOS KEYINT saves all registers (IX, IY and the shadow set included) around the hook, and the hook runs with interrupts disabled, so it cannot be re-entered and the SP diversion of the player is safe.
+- Register A: on entry to `H.TIMI`, A holds VDP status register 0 and the BIOS may need it back (unverified). The legacy `ubox_isr` preserves AF (`push af` / `pop af`). The installed callback preserves AF too, through a tiny `__naked` wrapper (`push af`, `call` the C hook body, `pop af`, `ret`), checked in the generated assembly.
+- Main-loop calls race with the hook: wrap every `AKM_Play`, every `AKM_PlaySFX` and `AKM_InitSFX` (if called after the hook is installed) in `DisableInterrupt()` / `EnableInterrupt()`. The legacy protected only `mplayer_init`. Helpers in `music.c/h` (`music_init`, `music_play`, `sfx_play`) keep the wrapping in one place.
+- Boot order (legacy `main.c:21-32`): copy song and SFX to RAM, `AKM_InitSFX`, `AKM_Play(0, ...)`, and only then install the hook. The hook must not run `AKM_Update` before the player is initialised.
+- Sub-songs are 0-based, as in the legacy: game = 0, title = 1, game over = 2, hi-score = 3, called as `AKM_Play(n, (void*)0xD000)`.
+- SFX: `ARKOS_SFX_START_IDX` must be set to 1 in `msxgl_config.h` (it is 0 now). Effects 1-5 keep the legacy numbers. Volume 0 = loudest in both APIs: pass 0 as the legacy does.
+- Priority effects (settled, dropped): in the legacy, effect 5 was never blocked, and effect 4 was dropped only when an installation had just been destroyed and channel 1 was still sounding. The new code plays more, never fewer, big-explosion sounds.
+- Replay rate: no compensation, as in the legacy: a 50 Hz song plays about 20% fast at 60 Hz.
+- Assets: `assets/sfx/song.akm` (1108 B, exported for 0xD000) and `assets/sfx/effects.akx` (283 B, exported for 0xE000) are already exported: do not re-export. `MSXbin assets/sfx/song.akm -t g_SongData -ad -o song.h` and `MSXbin assets/sfx/effects.akx -t g_SFXData -ad -o effects.h`. Copy at boot with `Mem_Copy` to 0xD000 and 0xE000.
+- Module: `"arkos/akm_player"` in `LibModules`. It does not need the `psg` module (the player writes the PSG ports directly).
+- Memory: no overlap (data ends at 0xC1E9, song 0xD000-0xD454, SFX 0xE000-0xE11B, Arkos buffer 0xF000-0xF113). The crt0 reads the stack top from HIMEM (BIOS variable) at runtime. With HIMEM = 0xF380 about 620 bytes of stack remain below the Arkos buffer. Open item (not verified): machines with a disk interface lower HIMEM, and the fixed buffers could overlap the disk system work area there. The legacy also fixed its stack at 0xF380.
 
 ### Step 6 — Input
 - `ubox_read_ctl(UBOX_MSX_CTL_CURSOR)` → `Keyboard_Read(8)` (or

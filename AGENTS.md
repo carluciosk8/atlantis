@@ -89,6 +89,8 @@ Video and interrupts
   `volatile`, protect 16-bit shared values with DI/EI, and never let the handler
   and the main loop interleave VDP access sequences.
 - Sound players must be called once per frame. Songs made for 50 Hz run faster at 60 Hz.
+- If the music player runs from the interrupt hook, every call into the player from the main loop (init, play song, play effect, stop) must be wrapped in DisableInterrupt()/EnableInterrupt(), and the hook must be installed only after the player has been initialised.
+- The H.TIMI callback must preserve AF (the legacy did): a C function can clobber A, so wrap it with push af / pop af.
 C (SDCC)
 - char = 8 bits, int = 16 bits, long = 32 bits, pointers = 16 bits. Prefer
   uint8_t/uint16_t. Beware integer promotion.
@@ -161,6 +163,7 @@ Assembly
 - The Arkos player uses a fixed RAM work area (default 0xF000, ~275 bytes) and
   the song must be placed at its export address. Check the memory map and make
   sure nothing overlaps before choosing addresses.
+- The Arkos binaries are already exported: assets/sfx/song.akm (exported for 0xD000, 1108 B) and assets/sfx/effects.akx (exported for 0xE000, 283 B); the Arkos player buffer is at 0xF000. Do not ask to re-export them unless a real problem is found.
 
 ## Migration rules
 - The migration plan is docs/MIGRATION_PLAN.md. Read it at the start of every
