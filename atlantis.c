@@ -1,12 +1,12 @@
 // ____________________________
-//  Atlantis — MSXgl (Step 5: music + SFX)
+//  Atlantis — MSXgl (Step 6: input)
 //
-//  Sets Screen 2, loads the tileset and sprite patterns, installs the vblank
-//  H_TIMI hook (which increments the frame counter and advances the Arkos AKM
-//  music player), and runs the full legacy game flow: title screen, wave loop
-//  (lanes, torpedoes, collisions, score, building explosions, deathray), game
-//  over and hi-score screens, looping forever. Input is a stub (Step 6) and the
-//  RNG seed is still pending (Step 7).
+//  Sets Screen 2, loads the tileset and sprite patterns, disables the BIOS key
+//  click, installs the vblank H_TIMI hook (which increments the frame counter
+//  and advances the Arkos AKM music player), and runs the full legacy game
+//  flow: title screen, wave loop (lanes, torpedoes, collisions, score, building
+//  explosions, deathray), game over and hi-score screens, looping forever.
+//  Keyboard input is real (Step 6); the RNG seed is still pending (Step 7).
 //─────────────────────────────────────────────────────────────────────────────
 
 //=============================================================================
@@ -19,7 +19,7 @@
 #include "city.h"
 #include "collision.h"
 #include "hud.h"
-#include "input.h"
+#include "controls.h"
 #include "lane.h"
 #include "music.h"
 #include "score.h"
@@ -28,11 +28,10 @@
 #include "torpedo.h"
 #include "wave.h"
 
-// Temporary test aid (Step 4d only). 1 = force the hi-score branch at game
-// over by setting the hi-score (hud[23..28]) to spaces at the start of each
-// game, so the score "000000" always beats it (spaces sort below every ASCII
-// digit). Lets the hi-score screen be reached even with TEST_AUTOFIRE 0 (the
-// score stays at 0). TODO(step 6: remove).
+// Debug test aid (0 by default; compiled out when 0). 1 = force the hi-score
+// branch at game over by setting the hi-score (hud[23..28]) to spaces at the
+// start of each game, so the score "000000" always beats it (spaces sort below
+// every ASCII digit) and score_check_hi() returns 1 even when the score is 0.
 #define TEST_FORCE_HISCORE 0
 
 //=============================================================================
@@ -71,6 +70,9 @@ void main(void)
 	VDP_SetMode(VDP_MODE_SCREEN2);
 	VDP_ClearVRAM();
 
+	// Disable the BIOS key click (the legacy crt0 cleared CLIKSW at boot).
+	BIOS_SetKeyClick(FALSE);
+
 	init_tiles();
 	init_sprites();      // 16x16 mode + sprite patterns (after ClearVRAM)
 
@@ -103,11 +105,10 @@ void main(void)
 		wave_init();
 
 #if TEST_FORCE_HISCORE
-		// TODO(step 6: remove) — test aid: set the hi-score (hud[23..28]) to
-		// TODO(step 6: remove) — spaces so the score "000000" beats it (spaces
-		// TODO(step 6: remove) — < '0' in ASCII) and score_check_hi() returns 1
-		// TODO(step 6: remove) — even with TEST_AUTOFIRE 0 (score stays at 0).
-		for (u8 i = 0; i < 6; i++) hud[23 + i] = ' ';  // TODO(step 6: remove)
+		// Test aid: set the hi-score (hud[23..28]) to spaces so the score
+		// "000000" beats it (spaces < '0' in ASCII) and score_check_hi()
+		// returns 1 even when the score stays at 0.
+		for (u8 i = 0; i < 6; i++) hud[23 + i] = ' ';
 #endif
 
 		while (left_index <= right_index || map_have_installation[0])

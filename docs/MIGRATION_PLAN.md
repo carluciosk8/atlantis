@@ -16,7 +16,7 @@ and the **ROM/RAM** table at the end of every step.
 - [x] Step 4c — torpedo, collision, score/city integration
 - [x] Step 4d — input stub, wave_finish, full game flow in main
 - [x] Step 5 — Port music + SFX (Arkos AKM)
-- [ ] Step 6 — Port input
+- [x] Step 6 — Port input
 - [ ] Step 7 — Port RNG (rand/srand)
 - [ ] Step 8 — Remove legacy plumbing, finalize build
 
@@ -256,7 +256,7 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   (TODO(step 6)) that can be switched off with a compile-time define, so gorgons can reach the last
   lane and the deathray can be observed.
   Visible: torpedoes, hits, score, destroyed installations, building explosions, the deathray.
-- 4d: `input.c` as a stub (the title auto-advances after the blink, torpedoes auto-fire on a
+- 4d: `controls.c` as a stub (the title auto-advances after the blink, torpedoes auto-fire on a
   timer, TODO(step 6)); call the already ported `wave_finish()` from the game flow (ported in 4b,
   finished in 4c); remove the temporary `TestLanesStep4b()` from `atlantis.c` (marked
   `TODO(step 4d: remove)`) and move the auto-fire stand-in into the input stub; rebuild the full
@@ -326,9 +326,22 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 - Memory: no overlap (data ends at 0xC1E9, song 0xD000-0xD454, SFX 0xE000-0xE11B, Arkos buffer 0xF000-0xF113). The crt0 reads the stack top from HIMEM (BIOS variable) at runtime. With HIMEM = 0xF380 about 620 bytes of stack remain below the Arkos buffer. Open item (not verified): machines with a disk interface lower HIMEM, and the fixed buffers could overlap the disk system work area there. The legacy also fixed its stack at 0xF380.
 
 ### Step 6 — Input
-- `ubox_read_ctl(UBOX_MSX_CTL_CURSOR)` → `Keyboard_Read(8)` (or
-  `Keyboard_ReadAsJoystick`). **Invert the polarity logic.**
-- Verify: emulator — cursor move + fire (space).
+- Replace the stubs in `controls.c/h` with real keyboard input, keeping the legacy signatures `handle_input()` and `wait_fire_button()`. Add `"input"` to `LibModules` and set `INPUT_KB_AS_JOYSTICK=TRUE` (see "Step 6 decisions").
+- Remove the stand-ins: `WAIT_FIRE_FRAMES`, the fixed wait, the auto-fire block (see decisions for the debug defines).
+- Verify: emulator — fire edge, launcher selection, title waits for release, no key click, no stray beeps.
+
+### Step 6 decisions
+(From the read-only analysis of Step 6.)
+- Legacy behavior to keep: only the keyboard (cursor keys + space), no joystick. `handle_input()` reads once per frame, fires on the rising edge of the fire button (`last_trigger` latch) and only if `!torpedos[torpedo_current].is_active`. Launcher choice at the moment of the press: LEFT held → left, else RIGHT held → right, else centre if `map_have_installation[0]`, else nothing (LEFT+RIGHT → left wins).
+- API: `Keyboard_ReadAsJoystick()` (needs `INPUT_KB_AS_JOYSTICK=TRUE`), returns `xxBARLDU` active low: Left = bit 2 (4), Right = bit 3 (8), TriggerA = bit 4 (16), numerically equal to the legacy masks. Invert once, in a helper `read_controller()`: `~Keyboard_ReadAsJoystick()` → active high. Masks: `JOY_INPUT_DIR_LEFT`, `JOY_INPUT_DIR_RIGHT`, `JOY_INPUT_TRIGGER_A`.
+- Interrupt safety: `Keyboard_Read` / `Keyboard_ReadAsJoystick` have no DI/EI around the row select (port AAh) and the read (port A9h), and the BIOS keyboard scan runs in the vblank interrupt, so an interrupt in between can read the wrong row. The legacy avoided it by disabling the BIOS scan. Wrap the call in `read_controller()` with `DisableInterrupt()` / `EnableInterrupt()`.
+- `wait_fire_button()`: two phases as in the legacy: wait for the press, then wait for the release (so a held button at the title does not skip it). Call `Halt()` once per iteration (one sample per frame; the legacy busy-looped).
+- BIOS keyboard handling: the legacy suppressed it (key click off in the crt0, `SCNCNT`/`REPCNT` zeroed every interrupt). The new build keeps it. Call `BIOS_SetKeyClick(FALSE)` at boot (`bios.h:64-69`). Whether to also zero `SCNCNT`/`REPCNT` in the hook is open: decide after listening for a buffer-full beep in the emulator.
+- Joystick is not added (the legacy has none). `INPUT_USE_JOYSTICK`, `INPUT_USE_MOUSE` and `INPUT_USE_DETECT` may be set to FALSE to save ROM, only if the build still passes.
+- Debug aids: `TEST_FORCE_HISCORE` removed as a debug define (0 by default, guarded in `atlantis.c`). Auto-fire removed as a debug define too (`TEST_AUTOFIRE`, 0 by default, only compiled when 1).
+- File name: the project module is `controls.c/h`, not `input.c/h`. The MSXgl build compiles every source to `out/<basename>.rel`, so a project file named `input.c` collides with the library module `engine/src/input.c` and overwrites its `.rel` (`Keyboard_ReadAsJoystick` became undefined at link). Never name a project file after an MSXgl module.
+- Debug defines kept (both 0 by default and compiled out when 0): `TEST_AUTOFIRE` (`controls.c:11`) and `TEST_FORCE_HISCORE` (`atlantis.c:35`).
+- Open: `INPUT_USE_JOYSTICK`, `INPUT_USE_MOUSE` and `INPUT_USE_DETECT` could be set to FALSE for about 149 B of ROM and 3 B of RAM. Left on in Step 6; decide in Step 8.
 
 ### Step 7 — RNG
 - `srand`/`rand` → `Math_SetRandomSeed16` / `Math_GetRandom8` / `Math_GetRandomMax8`.
@@ -353,9 +366,9 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
 | 4a | 10366 B (0x4000–0x687D), padded to 32 KB | 281 B (0xC000–0xC118) | sprites.c/h: 29 patterns (938 B sprite data in ROM) + `sprites_attributes[17]` (68 B RAM); temp sprite test in atlantis.c |
 | 4b | 12243 B (0x4000–0x6FD2), padded to 32 KB | 485 B (0xC000–0xC1E5) | queue/gorgons/difficulty/lane + `wave_start`; `rand()`/signed+unsigned div+mod pulled from z80.lib; temp lane test in atlantis.c |
 | 4c | 13696 B (0x4000–0x757F), padded to 32 KB | 489 B (0xC000–0xC1E9) | torpedo.c/h + collision.c/h ported (stubs removed from lane.c); score/city/deathray integration; temp auto-fire stand-in in atlantis.c |
-| 4d | 13771 B (0x4000–0x75CA), padded to 32 KB | 489 B (0xC000–0xC1E9) | input.c/h stub (handle_input + wait_fire_button); full game flow in main (title → wave loop → game over → hi-score); temp tests removed |
+| 4d | 13771 B (0x4000–0x75CA), padded to 32 KB | 489 B (0xC000–0xC1E9) | controls.c/h stub (handle_input + wait_fire_button); full game flow in main (title → wave loop → game over → hi-score); temp tests removed |
 | 5 | 17227 B (0x4000–0x834A), padded to 32 KB | 491 B (0xC000–0xC1EB) + 1108 B song @0xD000 + 283 B SFX @0xE000 + 275 B Arkos @0xF000 | music + SFX: `arkos/akm_player` module, song/SFX copied to RAM at boot; merged H_TIMI hook (frame counter + AKM_Update); music.c/h helpers; RAM +2 B (g_AKM_Playing, g_AKM_EndOfSong) |
-| 6 | | | |
+| 6 | 17496 B (0x4000–0x8457), padded to 32 KB | 495 B (0xC000–0xC1EF) | real input: `input` module (keyboard + joystick + mouse + detect) + `controls.c`; key click off via `BIOS_SetKeyClick(FALSE)`; RAM +4 B (3 mouse globals + `last_trigger`) |
 | 7 | | | |
 | 8 | | | |
 
@@ -536,15 +549,15 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   and the destruction and explosion of installations. Still not observed: the end of a wave
   and later waves, bandits, speed variation, the title/game-over/hi-score screens (4d), music (5).
 
-- **Step 4d — input stub lives in `input.c`/`input.h`.** `handle_input()` holds the
+- **Step 4d — input stub lives in `controls.c`/`controls.h`.** `handle_input()` holds the
   auto-fire stand-in (moved from `atlantis.c` `TestAutoFire()`), gated by `TEST_AUTOFIRE`
-  (defined in `input.h`, default 1) and `wait_fire_button()` waits `WAIT_FIRE_FRAMES` (180,
-  defined in `input.c`) via `Halt()`. Both functions are `TODO(step 6)`. Step 6 only changes
+  (defined in `controls.h`, default 1) and `wait_fire_button()` waits `WAIT_FIRE_FRAMES` (180,
+  defined in `controls.c`) via `Halt()`. Both functions are `TODO(step 6)`. Step 6 only changes
   their bodies; nothing else calls them except the game flow (`atlantis.c` main loop → 
   `handle_input`, `hud.c` title screen → `wait_fire_button`).
 
 - **Step 4d — build config change.** `project_config.js` `AddSources` now also lists
-  `"input.c"` (the stub module created in this step).
+  `"controls.c"` (the stub module created in this step).
 
 - **Step 4d — `TEST_FORCE_HISCORE` (0 by default) must set the hi-score *strictly below*
   "000000".** `score_check_hi()` (score.c) does a strict lexicographic `>` over the 6 ASCII
@@ -629,3 +642,48 @@ emulator checklist. Update **Status** and **ROM/RAM** after each.
   (mirrors `s_arkos.js`, which lists the arkos module without `psg`).
 
 - **Step 5 — verified in the emulator.** Music (sub-songs 0-3), the five effects and the music continuing through the frame waits sound like the legacy ROM. The ROM now crosses 0x8000 (ends at 0x834A), the first step to use page 2; it works in the emulator. Confirmed: the `ROM_32K` crt0 sets the page 2 slot equal to the page 1 slot (`INIT_P1_TO_P2`, `crt0_rom32.asm:58-59`) before `main`, so code and data above 0x8000 are reachable on a real machine. Open items: HIMEM on machines with a disk interface (see "Step 5 decisions").
+
+- **Step 6 — project input module renamed `input.c/h` → `controls.c/h`.** The MSXgl build
+  compiles every library module and every project source to `out/<basename>.rel`, so a project
+  file named `input.c` collides with the `input` library module (`engine/src/input.c`) added in
+  this step — the project `.rel` overwrote the library's and `Keyboard_ReadAsJoystick` came back
+  undefined at link. The project input layer is now `controls.c`/`controls.h` (functions
+  `handle_input()`/`wait_fire_button()` keep their names). `AddSources` lists `"controls.c"`,
+  and `atlantis.c`/`hud.c` include `"controls.h"`. Nothing else referenced the old name.
+
+- **Step 6 — build config changes.** `project_config.js`: `LibModules` adds `"input"` and
+  `AddSources` lists `"controls.c"` (was `"input.c"`). `msxgl_config.h`: `INPUT_KB_AS_JOYSTICK`
+  `FALSE → TRUE`. `INPUT_USE_JOYSTICK`, `INPUT_USE_MOUSE`, `INPUT_USE_DETECT` are unchanged
+  (TRUE), per the plan.
+
+- **Step 6 — input implementation.** `controls.c` keeps the legacy signatures and behavior:
+  `read_controller()` = `DisableInterrupt(); ~Keyboard_ReadAsJoystick(); EnableInterrupt()`
+  (inverts once to active-high; the DI/EI closes the BIOS-scan race in `Keyboard_ReadAsJoystick`,
+  which has no internal protection). `handle_input()` fires on the rising edge of
+  `JOY_INPUT_TRIGGER_A` via a static `last_trigger` latch, only if `!torpedos[torpedo_current].is_active`,
+  with launcher order LEFT → RIGHT → centre (`map_have_installation[0]`), using the exact legacy
+  `torpedo_fire` arguments. `wait_fire_button()` does the two-phase press-then-release wait with
+  `Halt()` once per iteration. Generated asm (`out/controls.asm`) confirmed: `di / call / cpl / ei / ret`
+  for the read, and the three `torpedo_fire` calls carry the correct constants (LEFT 13*4,14,101,4,-2;
+  RIGHT 14*4,238,94,-4,-2; CENTER 12*4,126,93,0,-3).
+
+- **Step 6 — key click off, buffer/repeat left alone.** `BIOS_SetKeyClick(FALSE)` is called once in
+  `atlantis.c` main() (after `VDP_ClearVRAM`, before the hook), mirroring the legacy crt0's CLIKSW
+  clear. `SCNCNT`/`REPCNT` are NOT zeroed in the hook (left open, per the plan): the BIOS keyboard
+  scan and key repeat stay active, so the buffer-full beep question is still to check in the emulator.
+
+- **Step 6 — debug defines left (0 by default, compiled out when 0).** `TEST_AUTOFIRE` lives at the
+  top of `controls.c` (`#define TEST_AUTOFIRE 0`) and guards a timer auto-fire block; `TEST_FORCE_HISCORE`
+  lives in `atlantis.c` (`#define TEST_FORCE_HISCORE 0`) and guards the hi-score spaces write. Both are
+  absent from the normal build when 0. No `TODO(step 6)` markers remain; the only TODOs left are the two
+  `TODO(step 7)` RNG markers (`difficulty.c:9`, `wave.c:57`).
+
+- **Step 6 — size.** ROM 17496 B (0x4000–0x8457), +269 B over Step 5. Of that, the `input` module's
+  code is ~204 B (`Input_Detect` 29 + `Joystick_Read` 17 + `Mouse_Read` 103 + `Keyboard_Read` 11 +
+  `Keyboard_ReadAsJoystick` 44, from `out/atlantis.map`), the rest is `controls.c` real logic replacing
+  the 4d stub. Turning `INPUT_USE_JOYSTICK`/`INPUT_USE_MOUSE`/`INPUT_USE_DETECT` to FALSE (not done)
+  would drop ~149 B of ROM and the 3 mouse RAM globals. RAM 495 B (0xC000–0xC1EF), +4 B over Step 5
+  (3 mouse globals `g_Mouse_OffsetX/Y/Buttons` from `mouse.c` + 1 B `last_trigger`); data still ends at
+  0xC1EF, well below 0xD000. No new compiler warnings.
+
+- **Step 6 — verified in the emulator.** Fire edge, launcher selection, two-torpedo round-robin, title waiting for release, no key click: identical to the legacy ROM. Open: the buffer-full beep with many keys held (`SCNCNT`/`REPCNT` are not zeroed in the hook; no beep was observed [adjust if you did hear one]).

@@ -191,6 +191,7 @@ Assembly
   (LibModules) in project_config.js: a module that is not enabled there does not
   exist in the build. Check both before using a module.
 - Match the style of the existing code.
+- Never name a project source file after an MSXgl library module (input.c, system.c, vdp.c, memory.c, math.c, ...): the build writes out/<basename>.rel for every source, so the project file overwrites the library object and the link fails.
 
 ## Build and verification
 - Legacy ubox build: `make` (legacy code in src/)

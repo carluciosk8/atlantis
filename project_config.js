@@ -13,10 +13,10 @@ ProjName = "atlantis";
 ProjModules = [ ProjName ];
 
 //-- List of library modules to build (array)
-LibModules = [ "system", "bios", "vdp", "arkos/akm_player" ];
+LibModules = [ "system", "bios", "vdp", "arkos/akm_player", "input" ];
 
 //-- Additional project sources to compile and link (array)
-AddSources = [ "tiles.c", "city.c", "hud.c", "wave.c", "score.c", "sprites.c", "queue.c", "gorgons.c", "difficulty.c", "lane.c", "torpedo.c", "collision.c", "input.c", "music.c" ];
+AddSources = [ "tiles.c", "city.c", "hud.c", "wave.c", "score.c", "sprites.c", "queue.c", "gorgons.c", "difficulty.c", "lane.c", "torpedo.c", "collision.c", "controls.c", "music.c" ];
 
 //-- Target MSX machine version (string): "1" = MSX1
 Machine = "1";

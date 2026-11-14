@@ -2,7 +2,7 @@
 
 #include "city.h"
 #include "collision.h"
-#include "input.h"
+#include "controls.h"
 #include "lane.h"
 #include "sprites.h"
 #include "tiles.h"
@@ -88,7 +88,7 @@ void hud_show_title_screen()
 {
     draw_title_screen();
 
-    wait_fire_button();   // TODO(step 6): stub — fixed 180-frame wait; Step 6 replaces with real fire-button read
+    wait_fire_button();
 
     // "HIT TRIGGER TO START" blink loop: 10 cycles of 7 frames off / 7 frames on
     // (140 vblanks total ~ 2.33 s at 60 Hz, 2.8 s at 50 Hz).
