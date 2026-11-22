@@ -99,8 +99,8 @@ void main(void)
 
 		collision_init();
 		lane_init_all();
-		map_init();
 		score_init();
+		map_init();
 		torpedo_init_all();
 		wave_init();
 

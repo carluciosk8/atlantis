@@ -3,6 +3,8 @@
 #include "hud.h"
 
 
+// The score is 6 ASCII digits stored in the HUD text buffer, most significant
+// digit first (score[0] = hundred-thousands ... score[5] = ones).
 u8* score = &hud[9];
 u8 score_credits = 0;
 
@@ -18,83 +20,40 @@ void score_init()
 }
 
 
-void score_increase_hundred(u8 digit)
+// Add 'points' (at most 99) to the score. Saturates at 999999. Every time the
+// score crosses a multiple of 100 a credit (bonus installation) is earned.
+void score_add(u8 points)
 {
-    u8 ten_thousand_digit = score[1];
+    u8 hundreds_digit = score[3];
 
-    score[3] += digit;
-    if (score[3] > '9')
+    u8 tens = 0;
+    while (points >= 10)
     {
-        score[3] -= 10;
-        score[2]++;
+        points -= 10;
+        tens++;
     }
-    if (score[2] > '9')
+
+    score[5] += points;
+    score[4] += tens;
+
+    for (u8 i = 5; i > 0; i--)
     {
-        score[2] -= 10;
-        score[1]++;
+        if (score[i] > '9')
+        {
+            score[i] -= 10;
+            score[i - 1]++;
+        }
     }
-    if (score[1] > '9')
-    {
-        score[1] -= 10;
-        score[0]++;
-    }
+
     if (score[0] > '9')
     {
-        score[0] -= 10;
-        score[5]++;
-    }
-    if (score[5] > '9')
-    {
-        score[5] -= 10;
-        score[4]++;
-    }
-    if (score[4] > '9')
-    {
-        score[4] -= 10;
-        score[3]++;
+        for (u8 i = 0; i < 6; i++) score[i] = '9';
+        return;
     }
 
-    if (score[1] > ten_thousand_digit) score_credits++;
-}
-
-
-void score_increase_thousand(u8 digit)
-{
-    u8 ten_thousand_digit = score[1];
-
-    score[2] += digit;
-    if (score[2] > '9')
-    {
-        score[2] -= 10;
-        score[1]++;
-    }
-    if (score[1] > '9')
-    {
-        score[1] -= 10;
-        score[0]++;
-    }
-    if (score[0] > '9')
-    {
-        score[0] -= 10;
-        score[5]++;
-    }
-    if (score[5] > '9')
-    {
-        score[5] -= 10;
-        score[4]++;
-    }
-    if (score[4] > '9')
-    {
-        score[4] -= 10;
-        score[3]++;
-    }
-    if (score[3] > '9')
-    {
-        score[3] -= 10;
-        score[2]++;
-    }
-
-    if (score[1] > ten_thousand_digit) score_credits++;
+    // Points are always below 100, so at most one multiple of 100 is crossed
+    // and the hundreds digit changes exactly when that happens.
+    if (score[3] != hundreds_digit) score_credits++;
 }
 
 

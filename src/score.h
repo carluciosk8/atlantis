@@ -10,7 +10,6 @@ extern u8* score;
 extern u8 score_credits;
 
 void score_init();
-void score_increase_hundred(u8 digit);
-void score_increase_thousand(u8 digit);
+void score_add(u8 points);
 u8 score_check_hi();
 void score_promote_hi();

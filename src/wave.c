@@ -69,7 +69,7 @@ void wave_start()
 
 void wave_finish()
 {
-    for (u8 i = 0; i < 7; i++) if (map_have_installation[i]) score_increase_hundred(5);
+    for (u8 i = 0; i < 7; i++) if (map_have_installation[i]) score_add(5);
     SCORE_DRAW();
 
     if ((map_have_installation[0] == 0) && (score_credits > 0))

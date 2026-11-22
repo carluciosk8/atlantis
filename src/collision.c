@@ -36,9 +36,9 @@ void collision_handle_torpedo(u8 torpedo, u8 lane)
                 if (g_lanes[3].state == LANE_STATE_MOVING) lane_start_state_exploding(torpedo, 3, 1);
 
                 if (torpedos[torpedo].dx == 0)
-                    score_increase_thousand(1);
+                    score_add(10);
                 else
-                    score_increase_thousand(2);
+                    score_add(20);
                 TILES_PUT_BUFFER(9, 23, score, 6);
             }
         }
@@ -49,9 +49,9 @@ void collision_handle_torpedo(u8 torpedo, u8 lane)
                 lane_start_state_exploding(torpedo, lane, 0);
 
                 if (torpedos[torpedo].dx == 0)
-                    score_increase_hundred(1);
+                    score_add(1);
                 else
-                    score_increase_hundred(2);
+                    score_add(2);
                 TILES_PUT_BUFFER(9, 23, score, 6);
             }
         }
