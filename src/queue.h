@@ -3,6 +3,7 @@
 #include "msxgl.h"
 
 
+// Must be a power of two: queue.c wraps the indices with & (QUEUE_MAX_SIZE - 1).
 #define QUEUE_MAX_SIZE 32
 
 typedef struct

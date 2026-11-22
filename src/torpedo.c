@@ -30,37 +30,42 @@ void torpedo_init_all()
 }
 
 
-void torpedo_update(u8 n)
+static void torpedo_update(torpedo_t* t)
 {
-    if (torpedos[n].is_active)
+    if (t->is_active)
     {
-        torpedos[n].sprite->X += torpedos[n].dx;
-        torpedos[n].sprite->Y += torpedos[n].dy;
-        if (torpedos[n].sprite->Y > 191)
+        struct VDP_Sprite* sprite = t->sprite;
+        u8 y = sprite->Y + t->dy;
+        sprite->X += t->dx;
+        if (y > 191)
         {
-            torpedos[n].is_active = 0;
-            torpedos[n].sprite->Y = 192;
+            t->is_active = 0;
+            y = 192;
         }
+        sprite->Y = y;
     }
 }
 
 
 void torpedo_update_all()
 {
-    torpedo_update(0);
-    torpedo_update(1);
+    torpedo_update(&torpedos[0]);
+    torpedo_update(&torpedos[1]);
 }
 
 
 void torpedo_fire(u8 pattern, u8 x, u8 y, i8 dx, i8 dy)
 {
+    torpedo_t* t = &torpedos[torpedo_current];
+    struct VDP_Sprite* sprite = t->sprite;
+
     sfx_play(1, 2, 0);
-    torpedos[torpedo_current].sprite->Pattern = pattern;
-    torpedos[torpedo_current].is_active = 1;
-    torpedos[torpedo_current].sprite->X = x;
-    torpedos[torpedo_current].sprite->Y = y;
-    torpedos[torpedo_current].dx = dx;
-    torpedos[torpedo_current].dy = dy;
-    torpedo_current = (torpedo_current + 1) % 2;
+    sprite->Pattern = pattern;
+    t->is_active = 1;
+    sprite->X = x;
+    sprite->Y = y;
+    t->dx = dx;
+    t->dy = dy;
+    torpedo_current ^= 1;   // 0 <-> 1
     torpedo_is_fired = 0;
 }

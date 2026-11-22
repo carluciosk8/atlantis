@@ -36,7 +36,7 @@ void wave_draw_hud()
     TILES_PUT_BUFFER(11, 7, border, sizeof(border));
 
     // Wait ~120 frames (2.0 s at 60 Hz, 2.4 s at 50 Hz).
-    for (u16 frame = 0; frame < 120; frame++)
+    for (u8 frame = 0; frame < 120; frame++)
     {
         Halt();
         sprites_flush();

@@ -68,9 +68,14 @@ const u16 map_installations_vaddress[] =
 u8 map_state = MAP_STATE_IDLE;
 u8 map_explosion_counter = 0;
 
+// Last water/generator animation frame written to VRAM (0xFF forces a redraw).
+static u8 map_anim_frame = 0xFF;
+
 
 void map_init()
 {
+    map_anim_frame = 0xFF;
+
     VDP_EnableDisplay(FALSE);
     VDP_SetColor2(7, 1);   // border 7 (cyan); text 1 unused in Screen 2
     VDP_FillScreen_GM2(35);
@@ -92,6 +97,7 @@ void map_create_instalation(u8 index)
 {
     VDP_WriteVRAM_16K(map_installations_tiles[index], g_ScreenLayoutLow + map_installations_vaddress[index], map_installations_size[index]);
     map_have_installation[index] = 1;
+    map_anim_frame = 0xFF;   // a rebuilt generator gets its animated tile next frame
 }
 
 
@@ -124,16 +130,23 @@ void map_update()
 {
     // Water/generator animation, driven by the 8-bit frame counter (legacy
     // ubox_tick). four_frames_count advances every 4 vblanks (0..3),
-    // two_frames_count every 8 vblanks (0..1).
-    u8 four_frames_count = (g_FrameCounter % 16) >> 2;
-    u8 two_frames_count = four_frames_count >> 1;
+    // two_frames_count every 8 vblanks (0..1). The tiles are only rewritten
+    // when four_frames_count changes (compared with the last value written, so
+    // a frame overrun that skips a counter value still redraws).
+    u8 four_frames_count = (u8)(g_FrameCounter >> 2) & 3;
 
-    if (map_have_installation[4]) VDP_Poke_GM2(17, 13, map_generator_air[0] + two_frames_count);
-    if (map_have_installation[3]) VDP_Poke_GM2(13, 15, map_generator_aqua[0] + four_frames_count);
-    if (map_have_installation[6]) VDP_Poke_GM2(28, 15, map_generator_aqua[0] + four_frames_count);
+    if (four_frames_count != map_anim_frame)
+    {
+        u8 two_frames_count = four_frames_count >> 1;
+        map_anim_frame = four_frames_count;
 
-    VDP_WriteVRAM_16K(map_water_anim[four_frames_count], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(2, 14, 0), 12);
-    VDP_WriteVRAM_16K(map_water_anim[four_frames_count], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(18, 14, 0), 12);
+        if (map_have_installation[4]) VDP_Poke_GM2(17, 13, map_generator_air[0] + two_frames_count);
+        if (map_have_installation[3]) VDP_Poke_GM2(13, 15, map_generator_aqua[0] + four_frames_count);
+        if (map_have_installation[6]) VDP_Poke_GM2(28, 15, map_generator_aqua[0] + four_frames_count);
+
+        VDP_WriteVRAM_16K(map_water_anim[four_frames_count], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(2, 14, 0), 12);
+        VDP_WriteVRAM_16K(map_water_anim[four_frames_count], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(18, 14, 0), 12);
+    }
 
     if (map_state == MAP_STATE_EXPLODING)
     {

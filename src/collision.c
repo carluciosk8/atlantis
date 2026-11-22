@@ -20,56 +20,58 @@ void collision_init()
 }
 
 
-void collision_handle_torpedo(u8 torpedo, u8 lane)
+// lo <= d <= hi for an 8-bit difference d, as a single unsigned compare
+// (exact with 8-bit wraparound: values below lo wrap above hi - lo).
+#define IN_RANGE(d, lo, hi)  ((u8)((u8)(d) - (u8)(lo)) <= (u8)((hi) - (lo)))
+
+
+// Test one (active) torpedo against the lanes 3, 2, 1, 0 (legacy order).
+static void collision_handle_torpedo(u8 torpedo)
 {
-    i8 dx = torpedos[torpedo].sprite->X - g_lanes[lane].sprite1->X;
-    i8 dy = torpedos[torpedo].sprite->Y - g_lanes[lane].sprite1->Y;
-    if (g_lanes[lane].state == LANE_STATE_MOVING)
+    torpedo_t* t = &torpedos[torpedo];
+    u8 tx = t->sprite->X;
+    u8 ty = t->sprite->Y;
+    lane_t* lane = &g_lanes[3];
+    for (u8 n = 3; n != 0xFF; n--, lane--)
     {
-        if (g_lanes[lane].gorgon_id == GORGON_ID_BANDIT_LEFT || g_lanes[lane].gorgon_id == GORGON_ID_BANDIT_RIGHT)
+        if (lane->state != LANE_STATE_MOVING) continue;
+
+        u8 dx = tx - lane->sprite1->X;
+        u8 dy = ty - lane->sprite1->Y;
+        u8 id = lane->gorgon_id;
+        if (id == GORGON_ID_BANDIT_LEFT || id == GORGON_ID_BANDIT_RIGHT)
         {
-            if (2 <= dx && dx <= 12 && 6 <= dy && dy <= 14)
+            if (IN_RANGE(dx, 2, 12) && IN_RANGE(dy, 6, 14))
             {
                 if (g_lanes[0].state == LANE_STATE_MOVING) lane_start_state_exploding(torpedo, 0, 1);
                 if (g_lanes[1].state == LANE_STATE_MOVING) lane_start_state_exploding(torpedo, 1, 1);
                 if (g_lanes[2].state == LANE_STATE_MOVING) lane_start_state_exploding(torpedo, 2, 1);
                 if (g_lanes[3].state == LANE_STATE_MOVING) lane_start_state_exploding(torpedo, 3, 1);
 
-                if (torpedos[torpedo].dx == 0)
-                    score_add(10);
-                else
-                    score_add(20);
+                score_add((t->dx == 0) ? 10 : 20);
                 TILES_PUT_BUFFER(9, 23, score, 6);
+                return;   // the torpedo is now parked at Y=192: no further hit possible
             }
         }
-        else
+        else if (IN_RANGE(dx, -2, 15) && IN_RANGE(dy, 4, 15))
         {
-            if (-2 <= dx && dx <= 15 && 4 <= dy && dy <= 15)
-            {
-                lane_start_state_exploding(torpedo, lane, 0);
+            lane_start_state_exploding(torpedo, n, 0);
 
-                if (torpedos[torpedo].dx == 0)
-                    score_add(1);
-                else
-                    score_add(2);
-                TILES_PUT_BUFFER(9, 23, score, 6);
-            }
+            score_add((t->dx == 0) ? 1 : 2);
+            TILES_PUT_BUFFER(9, 23, score, 6);
+            return;       // the torpedo is now parked at Y=192: no further hit possible
         }
     }
 }
 
 
+// An inactive torpedo is parked at Y=192 and can never overlap a lane (lane
+// Y <= 72), so skipping it gives the same result as testing it. The test is
+// done here, with constant indices, so it costs a single absolute load.
 void collision_handle_torpedos()
 {
-    collision_handle_torpedo(0, 3);
-    collision_handle_torpedo(0, 2);
-    collision_handle_torpedo(0, 1);
-    collision_handle_torpedo(0, 0);
-
-    collision_handle_torpedo(1, 3);
-    collision_handle_torpedo(1, 2);
-    collision_handle_torpedo(1, 1);
-    collision_handle_torpedo(1, 0);
+    if (torpedos[0].is_active) collision_handle_torpedo(0);
+    if (torpedos[1].is_active) collision_handle_torpedo(1);
 }
 
 

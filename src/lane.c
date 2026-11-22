@@ -13,6 +13,14 @@
 u8 g_is_attacking = 0;
 lane_t g_lanes[4];
 
+// Big-explosion border colour, 1 + counter % 15, for explosion_counter 0..20
+// (the explosion ends once counter >> 2 exceeds 4, so 20 is the maximum).
+static const u8 lane_big_border[21] =
+{
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    1, 2, 3, 4, 5, 6,
+};
+
 
 void lane_init(u8 n)
 {
@@ -76,17 +84,20 @@ void lane_execute_state_waiting(lane_t* lane)
 
 void lane_execute_state_moving(lane_t* lane)
 {
-    lane->sprite1->X += wave_velocities[lane->wave_index];
-    lane->sprite2->X = lane->sprite1->X;
+    struct VDP_Sprite* sprite1 = lane->sprite1;
+    i8 velocity = wave_velocities[lane->wave_index];
+    u8 x = sprite1->X + velocity;
+    sprite1->X = x;
+    lane->sprite2->X = x;
 
     if (g_is_attacking && !lane->next)
     {
         sfx_play(2, 0, 0);
-        sprites_update_deathray(lane->sprite1->X, g_FrameCounter % 4);
-        collision_handle_deathray(lane->sprite1->X, wave_velocities[lane->wave_index]);
+        sprites_update_deathray(x, g_FrameCounter & 3);
+        collision_handle_deathray(x, velocity);   // touches neither lane sprite
     }
 
-    if (LANE_RIGHT_LIMIT < lane->sprite1->X)
+    if (LANE_RIGHT_LIMIT < x)
     {
         lane->sprite1->Color = 0;
         lane->sprite2->Color = 0;
@@ -124,7 +135,7 @@ void lane_execute_state_exploding(lane_t* lane, u8 is_big)
         lane->sprite2->Pattern = sprites_explosion_anim2[lane->explosion_sprite_id];
         lane->explosion_counter++;
         lane->explosion_sprite_id = lane->explosion_counter >> 2;
-        if (is_big) set_border(1 + lane->explosion_counter % 15);
+        if (is_big) set_border(lane_big_border[lane->explosion_counter]);
     }
 }
 
