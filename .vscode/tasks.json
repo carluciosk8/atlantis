@@ -1,0 +1,38 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build ROM",
+            "type": "shell",
+            "command": "./build.sh",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": {
+                "owner": "sdcc",
+                "fileLocation": ["relative", "${workspaceFolder}"],
+                "pattern": {
+                    "regexp": "^(.+?):(\\d+):(?:(\\d+):)?\\s*(warning|error)[^:]*:\\s*(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            },
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+        },
+        {
+            "label": "Run in openMSX",
+            "type": "shell",
+            "command": "openmsx -machine C-BIOS_MSX1 -cart emul/rom/atlantis.rom",
+            "dependsOn": "Build ROM",
+            "problemMatcher": [],
+            "presentation": { "reveal": "silent", "panel": "dedicated" }
+        },
+        {
+            "label": "Report ROM/RAM usage",
+            "type": "shell",
+            "command": "grep -E 's__DATA|l__DATA|s__INITIALIZED|l__INITIALIZED' out/atlantis.map",
+            "problemMatcher": []
+        }
+    ]
+}

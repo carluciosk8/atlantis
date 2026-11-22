@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.h": "c",
+        "*.asm": "asm-collection"
+    },
+    "C_Cpp.default.configurationProvider": "",
+    "files.exclude": { "out": false },
+    "search.exclude": { "out": true, "emul": true },
+    "files.trimTrailingWhitespace": false
+}
