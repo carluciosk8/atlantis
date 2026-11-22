@@ -16,7 +16,27 @@ ProjModules = [ ProjName ];
 LibModules = [ "system", "bios", "vdp", "math", "arkos/akm_player", "input" ];
 
 //-- Additional project sources to compile and link (array)
-AddSources = [ "tiles.c", "city.c", "hud.c", "wave.c", "score.c", "sprites.c", "queue.c", "gorgons.c", "difficulty.c", "lane.c", "torpedo.c", "collision.c", "controls.c", "music.c" ];
+SourceDir = "src";
+
+AddSources =
+[
+    `${SourceDir}/tiles.c`,
+    `${SourceDir}/city.c`,
+    `${SourceDir}/hud.c`,
+    `${SourceDir}/wave.c`,
+    `${SourceDir}/score.c`,
+    `${SourceDir}/sprites.c`,
+    `${SourceDir}/queue.c`,
+    `${SourceDir}/gorgons.c`,
+    `${SourceDir}/difficulty.c`,
+    `${SourceDir}/lane.c`,
+    `${SourceDir}/torpedo.c`,
+    `${SourceDir}/collision.c`,
+    `${SourceDir}/controls.c`,
+    `${SourceDir}/music.c`,
+];
+
+CompileOpt = `-I${SourceDir}`;
 
 //-- Target MSX machine version (string): "1" = MSX1
 Machine = "1";
