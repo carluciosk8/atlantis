@@ -3,15 +3,15 @@
 #include "msxgl.h"
 
 
-extern u8 torpedo_current;
+extern u8 torpedo_next;
 extern u8 torpedo_is_fired;
 
 // Torpedo launch constants. The *_PATT values name the LAUNCHER side, not the
 // pointing direction: TORPEDO_LEFT_PATT (13*4) is launched from the left
 // launcher and is drawn pointing right (pattern "torpedo_right"), and
-// TORPEDO_RIGHT_PATT (14*4) from the right launcher pointing left. Copied
-// verbatim from the legacy — do not rename or "fix". Pattern values are already
-// in 8x8 units (16x16 pattern index * 4), matching the sprite attribute layout.
+// TORPEDO_RIGHT_PATT (14*4) from the right launcher pointing left. Do not
+// rename or "fix" them. Pattern values are in 8x8 units (16x16 pattern
+// index * 4), matching the sprite attribute layout.
 #define TORPEDO_LEFT_PATT   13*4
 #define TORPEDO_LEFT_X      14
 #define TORPEDO_LEFT_Y      101
@@ -39,8 +39,8 @@ typedef struct
     i8 dy;
 } torpedo_t;
 
-extern torpedo_t torpedos[2];
+extern torpedo_t torpedoes[2];
 
-void torpedo_init_all();
-void torpedo_update_all();
+void torpedo_init_all(void);
+void torpedo_update_all(void);
 void torpedo_fire(u8 pattern, u8 x, u8 y, i8 dx, i8 dy);

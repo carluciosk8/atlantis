@@ -4,12 +4,13 @@
 
 
 // The score is 6 ASCII digits stored in the HUD text buffer, most significant
-// digit first (score[0] = hundred-thousands ... score[5] = ones).
-u8* score = &hud[9];
+// digit first (score[0] = hundred-thousands ... score[5] = ones), so it can be
+// drawn straight from the buffer and compared digit by digit.
+u8* score = &hud[HUD_SCORE_COL];
 u8 score_credits = 0;
 
 
-void score_init()
+void score_init(void)
 {
     score[0] = '0';
     score[1] = '0';
@@ -36,7 +37,7 @@ void score_add(u8 points)
     score[5] += points;
     score[4] += tens;
 
-    for (u8 i = 5; i > 0; i--)
+    for (u8 i = HUD_DIGITS - 1; i > 0; i--)
     {
         if (score[i] > '9')
         {
@@ -47,7 +48,7 @@ void score_add(u8 points)
 
     if (score[0] > '9')
     {
-        for (u8 i = 0; i < 6; i++) score[i] = '9';
+        for (u8 i = 0; i < HUD_DIGITS; i++) score[i] = '9';
         return;
     }
 
@@ -57,10 +58,10 @@ void score_add(u8 points)
 }
 
 
-u8 score_check_hi()
+u8 score_check_hi(void)
 {
-    const u8* hi_score = &hud[23];
-    for (u8 i = 0; i < 6; i++)
+    const u8* hi_score = &hud[HUD_HISCORE_COL];
+    for (u8 i = 0; i < HUD_DIGITS; i++)
     {
         if (score[i] > hi_score[i]) return 1;
         else if (score[i] < hi_score[i]) return 0;
@@ -69,9 +70,9 @@ u8 score_check_hi()
 }
 
 
-void score_promote_hi()
+void score_promote_hi(void)
 {
-    u8* hi_score = &hud[23];
-    for (u8 i = 0; i < 6; i++) hi_score[i] = score[i];
-    TILES_PUT_BUFFER(23, 23, hi_score, 6);
+    u8* hi_score = &hud[HUD_HISCORE_COL];
+    for (u8 i = 0; i < HUD_DIGITS; i++) hi_score[i] = score[i];
+    TILES_PUT_BUFFER(HUD_HISCORE_COL, HUD_ROW, hi_score, HUD_DIGITS);
 }

@@ -3,5 +3,5 @@
 #include "msxgl.h"
 
 
-void handle_input();
-void wait_fire_button();
+void controls_update(void);
+void controls_wait_fire(void);

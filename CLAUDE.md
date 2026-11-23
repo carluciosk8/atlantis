@@ -12,7 +12,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 - Outputs: `emul/rom/atlantis.rom` (32 KB) and the linker map `out/atlantis.map`. Both `out/` and `emul/` are git-ignored.
 - There are no tests and no linter. A passing build only shows that the code compiles. Real behaviour has to be checked in an emulator, which the agent cannot run, so after a change list what the developer should check there.
 - Never call the system `sdcc` or `node`. The MSXgl tool uses its own embedded SDCC (4.6.0) from `MSXgl/tools/sdcc`. Do not install or replace tools.
-- After each build, report ROM usage (the `Seg[0000]: Lower=4000h Higher=…h Size=…` line) and RAM usage (`s__DATA`/`l__DATA` and `s__INITIALIZED`/`l__INITIALIZED` in the map). Warn if either grows. The baseline is 17541 B ROM (0x4000–0x8484) and about 495 B RAM (0xC000–0xC1EF).
+- After each build, report ROM usage (the `Seg[0000]: Lower=4000h Higher=…h Size=…` line) and RAM usage (`s__DATA`/`l__DATA` and `s__INITIALIZED`/`l__INITIALIZED` in the map). Warn if either grows. The baseline is 17050 B ROM (0x4000–0x8299) and about 496 B RAM (0xC000–0xC1F0).
 
 ## Build configuration
 
@@ -26,7 +26,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 - `atlantis.c` holds `main()` and the platform layer:
   - Boot sets Screen 2, loads tiles and sprites, turns off the key click, starts the music, and installs the `H_TIMI` hook.
   - `MusicFrameHook` is a `__naked` hook. It increments `volatile u8 g_FrameCounter` and calls `AKM_Update`. It wraps that work in `push af`/`pop af` because the BIOS needs A (a copy of VDP status S#0) preserved. It must not touch the VDP.
-  - The game loop runs title → waves → game over → hi-score, forever. Each frame does `handle_input` → `Halt()` (wait for vblank) → `sprites_flush` → map/lane/torpedo updates → collisions.
+  - The game loop runs title → waves → game over → hi-score, forever. Each frame does `controls_update` → `Halt()` (wait for vblank) → `sprites_flush` → map/lane/torpedo updates → collisions.
 - Game modules in `src/`:
   - **wave / difficulty**: `wave_start` seeds the RNG with `g_FrameCounter`, builds the gorgon list for the wave with its velocities, and pushes every gorgon into lane 0's queue.
   - **lane**: four lanes, each a state machine (waiting / moving / exploding). A gorgon that leaves the screen is passed to `lane->next` through its `queue_t`. In the last lane (`next == 0`) the gorgon attacks with the deathray. `g_wave_size` counts down as gorgons finish, and the wave ends when it reaches 0.
@@ -73,4 +73,5 @@ The `.akm` and `.akx` files were exported from Arkos Tracker 2 with "Encode to a
 - Inline assembly uses sdasz80 syntax: `#` before immediates, `.` before directives, and the index offset before the register (`2(ix)`). SDCC has no clobber lists, so prefer `__naked` functions with an explicit `ret`.
 - Respect the MSX1 limits: at most 4 sprites per scanline, one colour per sprite, and 2 colours per 8×1 tile row.
 - Match the style of the existing code.
+- SDCC codegen traps that were found by comparing ROMs: exact-fit string initialisers (`u8 a[3] = "abc";`) are not equivalent to brace lists (they warn and grow the ROM), so keep text as `{ 'a','b','c' }`. Adding a zero constant to an index (`[0 + 2*n]`) changes promotion and codegen. `y >= 192` and `y > 191` compile differently.
 - Never run `git commit` or `git push` unless asked. Stop once the build passes and leave review and commits to the developer.

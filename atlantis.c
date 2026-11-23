@@ -1,12 +1,8 @@
 // ____________________________
-//  Atlantis — MSXgl (Step 6: input)
+//  Atlantis — MSXgl
 //
-//  Sets Screen 2, loads the tileset and sprite patterns, disables the BIOS key
-//  click, installs the vblank H_TIMI hook (which increments the frame counter
-//  and advances the Arkos AKM music player), and runs the full legacy game
-//  flow: title screen, wave loop (lanes, torpedoes, collisions, score, building
-//  explosions, deathray), game over and hi-score screens, looping forever.
-//  Keyboard input is real (Step 6); the RNG seed is still pending (Step 7).
+//  Boot (Screen 2, tiles, sprite patterns, music, vblank hook) and the main
+//  game flow: title screen, waves, game over and hi-score, looping forever.
 //─────────────────────────────────────────────────────────────────────────────
 
 //=============================================================================
@@ -28,10 +24,9 @@
 #include "torpedo.h"
 #include "wave.h"
 
-// Debug test aid (0 by default; compiled out when 0). 1 = force the hi-score
-// branch at game over by setting the hi-score (hud[23..28]) to spaces at the
-// start of each game, so the score "000000" always beats it (spaces sort below
-// every ASCII digit) and score_check_hi() returns 1 even when the score is 0.
+// Debug test aid (compiled out when 0). 1 = set the hi-score to spaces at the
+// start of each game, so any score (even 000000) beats it, because a space
+// sorts below every ASCII digit, and the hi-score screen always shows.
 #define TEST_FORCE_HISCORE 0
 
 //=============================================================================
@@ -39,8 +34,6 @@
 //=============================================================================
 
 // Frame counter, incremented once per vblank by the H_TIMI hook below.
-// 8-bit (wraps every 256 frames), like the legacy ubox_tick. Also zeroed
-// explicitly in main() (legacy ubox_reset_tick()).
 volatile u8 g_FrameCounter;
 
 //-----------------------------------------------------------------------------
@@ -48,96 +41,87 @@ volatile u8 g_FrameCounter;
 // frame counter, then advances the music player. The BIOS KEYINT has already
 // saved all registers around the hook, but expects A (a copy of VDP status
 // register S#0) to be preserved for STATFL, so this __naked wrapper pushes AF
-// around its work (matching the legacy ubox_isr's push af / pop af). It must
-// not touch the VDP.
+// around its work. It must not touch the VDP.
 static void MusicFrameHook(void) __naked
 {
-	__asm
-		push	af
-		ld		hl, #_g_FrameCounter
-		inc		(hl)
-		call	_AKM_Update
-		pop		af
-		ret
-	__endasm;
+    __asm
+        push    af
+        ld      hl, #_g_FrameCounter
+        inc     (hl)
+        call    _AKM_Update
+        pop     af
+        ret
+    __endasm;
 }
 
 //-----------------------------------------------------------------------------
 /// Program entry point
 void main(void)
 {
-	// Screen 2 (Graphic 2), 256×192
-	VDP_SetMode(VDP_MODE_SCREEN2);
-	VDP_ClearVRAM();
+    // Screen 2 (Graphic 2), 256×192
+    VDP_SetMode(VDP_MODE_SCREEN2);
+    VDP_ClearVRAM();
+    BIOS_SetKeyClick(FALSE);
 
-	// Disable the BIOS key click (the legacy crt0 cleared CLIKSW at boot).
-	BIOS_SetKeyClick(FALSE);
+    tiles_init();
+    sprites_init();      // after VDP_ClearVRAM, which wipes the pattern table
 
-	init_tiles();
-	init_sprites();      // 16x16 mode + sprite patterns (after ClearVRAM)
+    // The hook is installed only after the player is initialised, and with
+    // interrupts disabled so a vblank cannot run a half-written hook
+    // (BIOS_SetHookCallback does not DI/EI itself).
+    g_FrameCounter = 0;
+    VDP_EnableVBlank(TRUE);
+    music_init();
+    DisableInterrupt();
+    BIOS_SetHookCallback(H_TIMI, MusicFrameHook);
+    EnableInterrupt();
 
-	// Enable the vblank interrupt, then initialise the music player (copy the
-	// song/SFX to 0xD000/0xE000, start the game sub-song) and finally install
-	// the merged H_TIMI hook that increments the frame counter and advances the
-	// music. The hook is installed only after the player is initialised, and the
-	// 4-byte hook write is done with interrupts disabled so a vblank cannot run
-	// a half-written hook (BIOS_SetHookCallback / BIOS_SetHookInterSlotCallback
-	// do not DI/EI themselves).
-	g_FrameCounter = 0;
-	VDP_EnableVBlank(TRUE);
-	music_init();
-	DisableInterrupt();
-	BIOS_SetHookCallback(H_TIMI, MusicFrameHook);
-	EnableInterrupt();
+    for (;;)
+    {
+        music_play(MUSIC_TITLE);
+        hud_show_title_screen();
 
-	for (;;)
-	{
-		music_play(1);
-		hud_show_title_screen();
+        music_play(MUSIC_GAME);
 
-		music_play(0);
-
-		collision_init();
-		lane_init_all();
-		score_init();
-		map_init();
-		torpedo_init_all();
-		wave_init();
+        collision_init();
+        lane_init_all();
+        score_init();
+        map_init();
+        torpedo_init_all();
+        wave_init();
 
 #if TEST_FORCE_HISCORE
-		// Test aid: set the hi-score (hud[23..28]) to spaces so the score
-		// "000000" beats it (spaces < '0' in ASCII) and score_check_hi()
-		// returns 1 even when the score stays at 0.
-		for (u8 i = 0; i < 6; i++) hud[23 + i] = ' ';
+        for (u8 i = 0; i < HUD_DIGITS; i++) hud[HUD_HISCORE_COL + i] = ' ';
 #endif
 
-		while (left_index <= right_index || map_have_installation[0])
-		{
-			wave_start();
-			wave_draw_hud();
+        // Play waves while any installation is left.
+        while (city_left_edge <= city_right_edge || map_have_installation[MAP_ACROPOLIS_COMMAND_ID])
+        {
+            wave_start();
+            wave_draw_hud();
 
-			while (g_wave_size > 0)
-			{
-				handle_input();
-				Halt();                    // wait for vblank
-				sprites_flush();           // SAT flush right after vblank (intentional)
-				map_update();
-				lane_update_all();
-				torpedo_update_all();
-				collision_handle_torpedos();
-			}
+            while (g_wave_size > 0)
+            {
+                controls_update();
+                Halt();                    // wait for vblank
+                sprites_flush();           // SAT flush right after vblank (intentional)
+                map_update();
+                lane_update_all();
+                torpedo_update_all();
+                collision_handle_torpedoes();
+            }
 
-			wave_finish();
-		}
+            wave_finish();
+        }
 
-		music_play(2);
-		hud_draw_game_over();
+        music_play(MUSIC_GAME_OVER);
+        hud_draw_game_over();
 
-		if (score_check_hi())
-		{
-			music_play(3);
-			score_promote_hi();
-			hud_draw_hi_score();
-		}
-	}
+        if (score_check_hi())
+        {
+            music_play(MUSIC_HI_SCORE);
+            score_promote_hi();
+            hud_draw_hi_score();
+        }
+    }
 }

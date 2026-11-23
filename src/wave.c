@@ -11,6 +11,12 @@
 #include "torpedo.h"
 
 
+// Positions of the 3 ASCII digits of the wave number inside wave_text.
+#define WAVE_HUNDREDS   6
+#define WAVE_TENS       7
+#define WAVE_ONES       8
+
+
 u8 wave_gorgons[WAVE_MAX_SIZE];
 i8 wave_velocities[WAVE_MAX_SIZE];
 i8 g_wave_size;
@@ -18,17 +24,17 @@ i8 g_wave_size;
 u8 wave_text[] = { ' ','W','A','V','E',' ','0','0','0',' ' };
 
 
-void wave_init()
+void wave_init(void)
 {
-    wave_text[6] = '0';
-    wave_text[7] = '0';
-    wave_text[8] = '1';
+    wave_text[WAVE_HUNDREDS] = '0';
+    wave_text[WAVE_TENS]     = '0';
+    wave_text[WAVE_ONES]     = '1';
 
     g_wave_size = 4;
 }
 
 
-void wave_draw_hud()
+void wave_draw_hud(void)
 {
     const u8 border[] = { ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' };
     TILES_PUT_BUFFER(11, 5, border, sizeof(border));
@@ -44,62 +50,77 @@ void wave_draw_hud()
         torpedo_update_all();
     }
 
-    // Restore the map tiles that the "WAVE" text overwrote (same as legacy: it
-    // rewrites the first 10 bytes of map_background over the 3 text rows).
-    VDP_WriteVRAM_16K(map_background, g_ScreenLayoutLow + 5*32 + 11, 10);
-    VDP_WriteVRAM_16K(map_background, g_ScreenLayoutLow + 6*32 + 11, 10);
-    VDP_WriteVRAM_16K(map_background, g_ScreenLayoutLow + 7*32 + 11, 10);
+    // Restore the sky behind the text: the first 10 tiles of map_background
+    // are plain sky.
+    TILES_PUT_BUFFER(11, 5, map_background, 10);
+    TILES_PUT_BUFFER(11, 6, map_background, 10);
+    TILES_PUT_BUFFER(11, 7, map_background, 10);
 }
 
 
-void wave_start()
+void wave_start(void)
 {
     Math_SetRandomSeed16(g_FrameCounter);
-    difficulty_adjust(&wave_text[6]);
+    difficulty_adjust(&wave_text[WAVE_HUNDREDS]);
+
     for (i8 i = 0; i < g_wave_size; i++)
     {
         wave_gorgons[i] = difficulty_get_random_gorgon();
-        u8 vel = difficulty_get_random_speed();
-        if (wave_gorgons[i] == GORGON_ID_BANDIT_LEFT || wave_gorgons[i] == GORGON_ID_BANDIT_RIGHT) vel++;
-        wave_velocities[i] = (wave_gorgons[i] % 2) ? -vel : vel;
+
+        u8 speed = difficulty_get_random_speed();
+        if (GORGON_IS_BANDIT(wave_gorgons[i])) speed++;
+        wave_velocities[i] = GORGON_MOVES_LEFT(wave_gorgons[i]) ? -speed : speed;
+
         queue_push(&(g_lanes[0]).queue, i);
     }
 }
 
 
-void wave_finish()
+void wave_finish(void)
 {
-    for (u8 i = 0; i < 7; i++) if (map_have_installation[i]) score_add(5);
+    // Bonus for every installation still standing.
+    for (u8 i = 0; i < MAP_INSTALLATION_COUNT; i++) if (map_have_installation[i]) score_add(5);
     SCORE_DRAW();
 
-    if ((map_have_installation[0] == 0) && (score_credits > 0))
+    // Spend the score credits rebuilding the city: the acropolis first, then
+    // the installations just outside the current edges, alternating sides.
+    if ((map_have_installation[MAP_ACROPOLIS_COMMAND_ID] == 0) && (score_credits > 0))
     {
-        map_create_instalation(0);
+        map_create_installation(MAP_ACROPOLIS_COMMAND_ID);
         score_credits--;
     }
 
-    // Rebuild installations at the current wave edges (collision.c's
-    // left_index / right_index), spending one score credit per installation.
-    while (score_credits > 0 && left_index > 1 && right_index < 6)
+    while (score_credits > 0 && city_left_edge > MAP_LEFTMOST_ID && city_right_edge < MAP_RIGHTMOST_ID)
     {
-        if (score_credits > 0 && left_index > 1)  { left_index--;  map_create_instalation(left_index);  score_credits--; }
-        if (score_credits > 0 && right_index < 6) { right_index++; map_create_instalation(right_index); score_credits--; }
+        if (score_credits > 0 && city_left_edge > MAP_LEFTMOST_ID)
+        {
+            city_left_edge--;
+            map_create_installation(city_left_edge);
+            score_credits--;
+        }
+        if (score_credits > 0 && city_right_edge < MAP_RIGHTMOST_ID)
+        {
+            city_right_edge++;
+            map_create_installation(city_right_edge);
+            score_credits--;
+        }
     }
 
-    wave_text[8]++;
-    if (wave_text[8] > '9')
+    // Advance the 3-digit wave number (999 wraps to 001).
+    wave_text[WAVE_ONES]++;
+    if (wave_text[WAVE_ONES] > '9')
     {
-        wave_text[8] = '0';
-        wave_text[7]++;
+        wave_text[WAVE_ONES] = '0';
+        wave_text[WAVE_TENS]++;
     }
-    if (wave_text[7] > '9')
+    if (wave_text[WAVE_TENS] > '9')
     {
-        wave_text[7] = '0';
-        wave_text[6]++;
+        wave_text[WAVE_TENS] = '0';
+        wave_text[WAVE_HUNDREDS]++;
     }
-    if (wave_text[6] > '9')
+    if (wave_text[WAVE_HUNDREDS] > '9')
     {
-        wave_text[6] = '0';
-        wave_text[8]++;
+        wave_text[WAVE_HUNDREDS] = '0';
+        wave_text[WAVE_ONES]++;
     }
 }

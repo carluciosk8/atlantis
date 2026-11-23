@@ -11,8 +11,8 @@
 #define TILES_PUT_BUFFER(X, Y, BUFFER, SIZE)    VDP_WriteVRAM_16K((const u8*)(BUFFER), g_ScreenLayoutLow + (Y)*32 + (X), (SIZE))
 #define TILES_PUT_BUFFER_CENTERED(Y, BUFFER)    TILES_PUT_BUFFER(16 - sizeof(BUFFER)/2, Y, BUFFER, sizeof(BUFFER))
 
-void init_tiles();
+void tiles_init(void);
 
 // Set the border/backdrop colour (R#7 low nibble). The text colour (high
-// nibble) is unused in Screen 2, so it is fixed to 1 (black).
-void set_border(u8 border);
+// nibble) is unused in Screen 2, so it is fixed to black.
+void tiles_set_border(u8 border);
