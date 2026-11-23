@@ -7,7 +7,7 @@
 // Debug auto-fire (compiled only when 1): fires a torpedo every 32 frames,
 // alternating the left and right launchers, so collisions, the score and the
 // deathray can be exercised without pressing the fire button.
-#define TEST_AUTOFIRE 0
+#define TEST_AUTOFIRE 1
 
 
 // Fire-button state of the previous frame (fires on the rising edge only).

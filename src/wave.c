@@ -90,7 +90,7 @@ void wave_finish(void)
         score_credits--;
     }
 
-    while (score_credits > 0 && city_left_edge > MAP_LEFTMOST_ID && city_right_edge < MAP_RIGHTMOST_ID)
+    while (score_credits > 0 && (city_left_edge > MAP_LEFTMOST_ID || city_right_edge < MAP_RIGHTMOST_ID))
     {
         if (score_credits > 0 && city_left_edge > MAP_LEFTMOST_ID)
         {
