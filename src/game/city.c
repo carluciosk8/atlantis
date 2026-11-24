@@ -34,6 +34,36 @@ static void map_create_installation(u8 index)
 }
 
 
+static void map_put_cloud(u8 x, u8 y, bool big)
+{
+    if (big)
+    {
+        TILES_PUT_BUFFER(x, y,     map_cloud_big_top,    sizeof(map_cloud_big_top));
+        TILES_PUT_BUFFER(x, y + 1, map_cloud_big_bottom, sizeof(map_cloud_big_bottom));
+    }
+    else
+        TILES_PUT_BUFFER(x, y, map_cloud_small, sizeof(map_cloud_small));
+}
+
+
+// Sky: the plain sky tile, a light-blue gradient on the top rows and a few
+// clouds. The clouds keep clear of the wave banner (columns 11..20, rows 5..7),
+// which is restored with plain sky tiles.
+static void map_draw_sky(void)
+{
+    VDP_FillScreen_GM2(MAP_TILE_SKY);
+    for (u8 row = 0; row < MAP_SKY_GRADIENT_ROWS; row++)
+        TILES_FILL(0, row, map_sky_gradient[row], 32);
+
+    map_put_cloud(3,  5, TRUE);
+    map_put_cloud(24, 4, TRUE);
+    map_put_cloud(6,  8, TRUE);
+    map_put_cloud(9,  4, FALSE);
+    map_put_cloud(22, 8, FALSE);
+    map_put_cloud(15, 10, FALSE);
+}
+
+
 void map_init(void)
 {
     map_anim_frame = 0xFF;
@@ -42,7 +72,7 @@ void map_init(void)
 
     VDP_EnableDisplay(FALSE);
     VDP_SetColor2(COLOR_CYAN, COLOR_BLACK);   // border; the text colour is unused in Screen 2
-    VDP_FillScreen_GM2(MAP_TILE_SKY);
+    map_draw_sky();
     TILES_PUT_BUFFER(0, 12, map_background, sizeof(map_background));
     TILES_PUT_BUFFER(0, HUD_ROW, hud, sizeof(hud));
 
