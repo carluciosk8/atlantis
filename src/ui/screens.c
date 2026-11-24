@@ -52,7 +52,11 @@ void screens_draw_title(void)
     TILES_PUT_BUFFER( 4, 6, title_logo_row3, 24);
     TILES_PUT_BUFFER( 4, 7, title_logo_row4, 24);
     TILES_PUT_BUFFER_CENTERED(13, title_press_start);
-    TILES_PUT_BUFFER_CENTERED(19, title_copyright);
+    TILES_PUT_BUFFER_CENTERED(16, title_copyright);
+    const u8* star = title_stars[0];
+    for (u8 i = 0; i < TITLE_STAR_COUNT; i++, star += 3)
+        VDP_Poke_GM2(star[0], star[1], star[2]);
+    TILES_PUT_BUFFER(0, TITLE_SEABED_ROW, title_seabed, sizeof(title_seabed));
     VDP_EnableDisplay(TRUE);
 }
 
