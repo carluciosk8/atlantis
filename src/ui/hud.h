@@ -11,5 +11,10 @@
 #define HUD_HISCORE_COL     23
 #define HUD_DIGITS          6
 
+// Ornament tiles in the blank cells of the row: a trident at each end and a
+// diamond divider between the score and the hi-score.
+#define HUD_TILE_TRIDENT    0xA9
+#define HUD_TILE_DIAMOND    0xAA
+
 extern u8 hud[HUD_WIDTH];
 

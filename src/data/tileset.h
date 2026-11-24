@@ -2,7 +2,7 @@
 // ██  ▀  █▄  ▀██▄ ▀ ▄█ ▄  ▄█▄█ ▄▀██
 // █  █ █  ▀▀  ▄█  █  █ ██ ██ █  ▀██
 // ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀          ▀▀
-// Data generated using MSXimg 1.22.1 on Tue Nov 24 00:16:57 2026
+// Data generated using MSXimg 1.22.1 on Tue Nov 24 00:20:12 2026
 // by Guillaume "Aoineko" Blanchard (2022) under CC BY-SA free license
 // ─────────────────────────────────────────────────────────────────────────────
 // Generation parameters:
@@ -1542,8 +1542,26 @@ const unsigned char tileset_Patterns[] =
 	0xFC, /* ######.. */ 
 	0xF8, /* #####... */ 
 	0x0F, /* ....#### */ 
+// Sprite[169] (offset:1352)
+	0x92, /* #..#..#. */ 
+	0x92, /* #..#..#. */ 
+	0x92, /* #..#..#. */ 
+	0x54, /* .#.#.#.. */ 
+	0x38, /* ..###... */ 
+	0x10, /* ...#.... */ 
+	0x10, /* ...#.... */ 
+	0x00, /* ........ */ 
+// Sprite[170] (offset:1360)
+	0x00, /* ........ */ 
+	0x18, /* ...##... */ 
+	0x3C, /* ..####.. */ 
+	0x7E, /* .######. */ 
+	0x3C, /* ..####.. */ 
+	0x18, /* ...##... */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
 };
-// Patterns size: 1352 Bytes (trimmed to the first 169 tiles; see TILES_COUNT)
+// Patterns size: 1368 Bytes (trimmed to the first 171 tiles; see TILES_COUNT)
 
 // Colors Table
 const unsigned char tileset_Colors[] =
@@ -1886,7 +1904,11 @@ const unsigned char tileset_Colors[] =
 	0xAA, 0xAA, 0xAA, 0xBA, 0xBA, 0xAA, 0xAA, 0x66, 
 // Sprite[168] (offset:3392)
 	0xAA, 0xAA, 0xAA, 0xAA, 0xA7, 0xA7, 0xA7, 0x76, 
+// Sprite[169] (offset:3400)
+	0xE1, 0xE1, 0xF1, 0xF1, 0xB1, 0xB1, 0xA1, 0x11, 
+// Sprite[170] (offset:3408)
+	0x11, 0xE1, 0xF1, 0xF1, 0xB1, 0xB1, 0x11, 0x11, 
 };
-// Colors size: 1352 Bytes (trimmed to the first 169 tiles; see TILES_COUNT)
+// Colors size: 1368 Bytes (trimmed to the first 171 tiles; see TILES_COUNT)
 
-// Total size: 2704 Bytes
+// Total size: 2736 Bytes
