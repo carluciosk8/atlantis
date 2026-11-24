@@ -51,7 +51,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 
 - `MSXimg assets/gfx/tiles_msx1.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h`
   - `tiles_msx1.png` is a copy of `tiles.png` with two greens changed to MSXimg's MSX1 palette values (0x66CC66 → 0x3EB849, 0x55AA55 → 0x3AA241). MSXimg's GM2 export ignores custom palettes.
-  - The header holds 256 tiles, but only the first 138 are loaded (`TILES_COUNT`).
+  - MSXimg exports all 256 tiles as one block. After exporting, set `TILES_COUNT` in `src/tiles.h` to the number of tiles the game uses, then run `python3 tools/trim_tileset.py`. It trims `tileset_Patterns` and `tileset_Colors` in `src/tileset.h` to `TILES_COUNT*8` bytes each and fixes the size comments. If you skip the `TILES_COUNT` update, new tiles are not loaded into VRAM.
 - `MSXbin assets/sfx/song.akm -t g_SongData -ad -o song.h`
 - `MSXbin assets/sfx/effects.akx -t g_SFXData -ad -o effects.h`
 

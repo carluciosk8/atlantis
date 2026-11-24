@@ -29,17 +29,14 @@ void wave_init(void)
     wave_text[WAVE_HUNDREDS] = '0';
     wave_text[WAVE_TENS]     = '0';
     wave_text[WAVE_ONES]     = '1';
-
-    g_wave_size = 4;
 }
 
 
 void wave_draw_hud(void)
 {
-    const u8 border[] = { ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' };
-    TILES_PUT_BUFFER(11, 5, border, sizeof(border));
+    TILES_FILL(11, 5, ' ', sizeof(wave_text));
     TILES_PUT_BUFFER(11, 6, wave_text, sizeof(wave_text));
-    TILES_PUT_BUFFER(11, 7, border, sizeof(border));
+    TILES_FILL(11, 7, ' ', sizeof(wave_text));
 
     // Wait ~120 frames (2.0 s at 60 Hz, 2.4 s at 50 Hz).
     for (u8 frame = 0; frame < 120; frame++)

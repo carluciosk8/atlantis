@@ -7,7 +7,6 @@
 torpedo_t torpedoes[2];
 
 u8 torpedo_next = 0;        // slot used by the next shot (alternates 0 / 1)
-u8 torpedo_is_fired = 0;
 
 
 void torpedo_init(u8 n)
@@ -70,5 +69,4 @@ void torpedo_fire(u8 pattern, u8 x, u8 y, i8 dx, i8 dy)
     torpedo->dy = dy;
 
     torpedo_next ^= 1;
-    torpedo_is_fired = 0;
 }

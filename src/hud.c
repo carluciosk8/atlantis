@@ -24,15 +24,14 @@ u8 hud[] = { ' ',' ',' ','S','C','O','R','E',' ','0','0','0','0','0','0',' ',' '
 
 void hud_draw_hi_score(void)
 {
-    const u8 border[] = { ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' };
-    const u8 text1[]  = { ' ','C','O','N','G','R','A','T','U','L','A','T','I','O','N','S',' ','.',' ' };
-    const u8 text2[]  = { ' ',' ','Y','O','U',' ','C','O','N','Q','U','E','R',' ','T','H','E',' ',' ' };
-    const u8 text3[]  = { ' ',' ',' ',' ','H','I',' ','S','C','O','R','E',' ','.','.','.',' ',' ',' ' };
-    TILES_PUT_BUFFER(6, 4, border, sizeof(border));
+    static const u8 text1[]  = { ' ','C','O','N','G','R','A','T','U','L','A','T','I','O','N','S',' ','.',' ' };
+    static const u8 text2[]  = { ' ',' ','Y','O','U',' ','C','O','N','Q','U','E','R',' ','T','H','E',' ',' ' };
+    static const u8 text3[]  = { ' ',' ',' ',' ','H','I',' ','S','C','O','R','E',' ','.','.','.',' ',' ',' ' };
+    TILES_FILL(6, 4, ' ', sizeof(text1));
     TILES_PUT_BUFFER(6, 5, text1, sizeof(text1));
     TILES_PUT_BUFFER(6, 6, text2, sizeof(text2));
     TILES_PUT_BUFFER(6, 7, text3, sizeof(text3));
-    TILES_PUT_BUFFER(6, 8, border, sizeof(border));
+    TILES_FILL(6, 8, ' ', sizeof(text1));
 
     // Wait ~480 frames (8.0 s at 60 Hz, 9.6 s at 50 Hz).
     for (u16 frame = 0; frame < 480; frame++)
@@ -46,11 +45,10 @@ void hud_draw_hi_score(void)
 
 void hud_draw_game_over(void)
 {
-    const u8 border[] = { ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' };
-    const u8 text[]   = { ' ','G','A','M','E',' ','O','V','E','R',' ' };
-    TILES_PUT_BUFFER(11, 5, border, sizeof(border));
+    static const u8 text[]   = { ' ','G','A','M','E',' ','O','V','E','R',' ' };
+    TILES_FILL(11, 5, ' ', sizeof(text));
     TILES_PUT_BUFFER(11, 6, text, sizeof(text));
-    TILES_PUT_BUFFER(11, 7, border, sizeof(border));
+    TILES_FILL(11, 7, ' ', sizeof(text));
 
     // Keep the game running for ~270 frames (4.5 s at 60 Hz, 5.4 s at 50 Hz).
     for (u16 frame = 0; frame < 270; frame++)

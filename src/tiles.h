@@ -9,6 +9,7 @@
 
 #define TILES_MAKE_ADDRESS(X, Y, BASE)          ( (X) + (Y)*32 + (BASE) )
 #define TILES_PUT_BUFFER(X, Y, BUFFER, SIZE)    VDP_WriteVRAM_16K((const u8*)(BUFFER), g_ScreenLayoutLow + (Y)*32 + (X), (SIZE))
+#define TILES_FILL(X, Y, VALUE, SIZE)           VDP_FillVRAM_16K((VALUE), g_ScreenLayoutLow + (Y)*32 + (X), (SIZE))
 #define TILES_PUT_BUFFER_CENTERED(Y, BUFFER)    TILES_PUT_BUFFER(16 - sizeof(BUFFER)/2, Y, BUFFER, sizeof(BUFFER))
 
 void tiles_init(void);

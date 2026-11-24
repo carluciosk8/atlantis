@@ -4,7 +4,6 @@
 
 
 extern u8 torpedo_next;
-extern u8 torpedo_is_fired;
 
 // Torpedo launch constants. The *_PATT values name the LAUNCHER side, not the
 // pointing direction: TORPEDO_LEFT_PATT (13*4) is launched from the left
