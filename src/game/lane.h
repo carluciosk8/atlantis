@@ -34,14 +34,11 @@ typedef struct lane_s
 } lane_t;
 
 extern lane_t g_lanes[LANE_COUNT];
-extern u8 g_is_attacking;
 
 
 void lane_init_all(void);
 void lane_update_all(void);
 
-void lane_execute_state_waiting(lane_t* lane);
-void lane_execute_state_moving(lane_t* lane);
-void lane_execute_state_exploding(lane_t* lane, u8 is_big);
-
-void lane_start_state_exploding(u8 torpedo_index, u8 lane_index, u8 is_big);
+// Blow up the gorgon in lane `lane_index`. is_big (bandit hit) also magnifies
+// the sprites and flashes the border. The caller hides the torpedo.
+void lane_explode(u8 lane_index, u8 is_big);

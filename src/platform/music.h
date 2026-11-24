@@ -5,7 +5,7 @@
 // Arkos Tracker 2 music and sound effects. The song (song.akm) and the SFX bank
 // (effects.akx) are position-dependent binaries: music_init() copies them to
 // their fixed RAM addresses (see the memory map in CLAUDE.md), and the H_TIMI
-// hook installed in atlantis.c advances the player once per vblank.
+// hook installed by frame.c advances the player once per vblank.
 
 // Sub-songs of song.akm
 #define MUSIC_GAME          0

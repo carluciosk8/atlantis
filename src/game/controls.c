@@ -1,6 +1,7 @@
 #include "controls.h"
 
 #include "city.h"
+#include "frame.h"
 #include "torpedo.h"
 
 
@@ -38,19 +39,16 @@ void controls_update(void)
     // Left / right pick a side launcher; the centre gun needs the acropolis.
     if (trigger && !last_trigger && !torpedoes[torpedo_next].is_active)
     {
-        if      (controller & JOY_INPUT_DIR_LEFT)                torpedo_fire(TORPEDO_LEFT_PATT,   TORPEDO_LEFT_X,   TORPEDO_LEFT_Y,   TORPEDO_LEFT_DX,   TORPEDO_LEFT_DY);
-        else if (controller & JOY_INPUT_DIR_RIGHT)               torpedo_fire(TORPEDO_RIGHT_PATT,  TORPEDO_RIGHT_X,  TORPEDO_RIGHT_Y,  TORPEDO_RIGHT_DX,  TORPEDO_RIGHT_DY);
-        else if (map_have_installation[MAP_ACROPOLIS_COMMAND_ID]) torpedo_fire(TORPEDO_CENTER_PATT, TORPEDO_CENTER_X, TORPEDO_CENTER_Y, TORPEDO_CENTER_DX, TORPEDO_CENTER_DY);
+        if      (controller & JOY_INPUT_DIR_LEFT)                torpedo_fire(TORPEDO_LAUNCHER_LEFT);
+        else if (controller & JOY_INPUT_DIR_RIGHT)               torpedo_fire(TORPEDO_LAUNCHER_RIGHT);
+        else if (map_have_installation[MAP_ACROPOLIS_COMMAND_ID]) torpedo_fire(TORPEDO_LAUNCHER_CENTER);
     }
     last_trigger = trigger;
 
 #if TEST_AUTOFIRE
     if ((g_FrameCounter % 32) == 0 && !torpedoes[torpedo_next].is_active)
     {
-        if (torpedo_next)
-            torpedo_fire(TORPEDO_RIGHT_PATT, TORPEDO_RIGHT_X, TORPEDO_RIGHT_Y, TORPEDO_RIGHT_DX, TORPEDO_RIGHT_DY);
-        else
-            torpedo_fire(TORPEDO_LEFT_PATT,  TORPEDO_LEFT_X,  TORPEDO_LEFT_Y,  TORPEDO_LEFT_DX,  TORPEDO_LEFT_DY);
+        torpedo_fire(torpedo_next ? TORPEDO_LAUNCHER_RIGHT : TORPEDO_LAUNCHER_LEFT);
     }
 #endif
 }

@@ -13,7 +13,3 @@
 
 extern u8 hud[HUD_WIDTH];
 
-
-void hud_draw_hi_score(void);
-void hud_draw_game_over(void);
-void hud_show_title_screen(void);

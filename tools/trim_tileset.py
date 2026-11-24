@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Trim src/tileset.h (exported by MSXimg with all 256 tiles) to TILES_COUNT tiles.
+"""Trim src/data/tileset.h (exported by MSXimg with all 256 tiles) to TILES_COUNT tiles.
 
 Usage: python3 tools/trim_tileset.py [tileset.h] [tiles.h]
 
-Reads TILES_COUNT from src/tiles.h, keeps the first TILES_COUNT*8 bytes of
+Reads TILES_COUNT from src/platform/tiles.h, keeps the first TILES_COUNT*8 bytes of
 tileset_Patterns and tileset_Colors, drops the per-tile comments past the
 limit and fixes the size comments. Safe to run on an already trimmed file.
 """
 import re
 import sys
 
-tileset_path = sys.argv[1] if len(sys.argv) > 1 else 'src/tileset.h'
-tiles_path = sys.argv[2] if len(sys.argv) > 2 else 'src/tiles.h'
+tileset_path = sys.argv[1] if len(sys.argv) > 1 else 'src/data/tileset.h'
+tiles_path = sys.argv[2] if len(sys.argv) > 2 else 'src/platform/tiles.h'
 
 m = re.search(r'#define\s+TILES_COUNT\s+(\d+)', open(tiles_path).read())
 if not m:

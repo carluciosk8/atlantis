@@ -1,0 +1,16 @@
+#pragma once
+
+#include "msxgl.h"
+
+
+// Screens only draw text and tiles. The game flow (flow.c) sequences them and
+// runs the frames in between, except for the title blink below.
+
+void screens_draw_title(void);
+void screens_blink_title(void);         // blink "HIT TRIGGER TO START" (blocks ~2.3 s)
+
+void screens_draw_wave_banner(void);    // " WAVE nnn " from wave_text
+void screens_clear_wave_banner(void);   // restore the sky behind it
+
+void screens_draw_game_over(void);
+void screens_draw_hi_score(void);

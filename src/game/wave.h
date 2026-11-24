@@ -8,7 +8,11 @@ extern u8 wave_gorgons[WAVE_MAX_SIZE];
 extern i8 wave_velocities[WAVE_MAX_SIZE];
 extern i8 g_wave_size;      // gorgons still in play; the wave ends at 0
 
+// " WAVE nnn ": the banner text, with the 3 ASCII digits of the wave number.
+// Owned by wave.c; screens.c draws it.
+#define WAVE_TEXT_SIZE   10
+extern u8 wave_text[WAVE_TEXT_SIZE];
+
 void wave_init(void);
-void wave_draw_hud(void);
 void wave_start(void);
 void wave_finish(void);

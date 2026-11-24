@@ -12,29 +12,30 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 - Outputs: `emul/rom/atlantis.rom` (32 KB) and the linker map `out/atlantis.map`. Both `out/` and `emul/` are git-ignored.
 - There are no tests and no linter. A passing build only shows that the code compiles. Real behaviour has to be checked in an emulator, which the agent cannot run, so after a change list what the developer should check there.
 - Never call the system `sdcc` or `node`. The MSXgl tool uses its own embedded SDCC (4.6.0) from `MSXgl/tools/sdcc`. Do not install or replace tools.
-- After each build, report ROM usage (the `Seg[0000]: Lower=4000h Higher=…h Size=…` line) and RAM usage (`s__DATA`/`l__DATA` and `s__INITIALIZED`/`l__INITIALIZED` in the map). Warn if either grows. The baseline is 17050 B ROM (0x4000–0x8299) and about 496 B RAM (0xC000–0xC1F0).
+- After each build, report ROM usage (the `Seg[0000]: Lower=4000h Higher=…h Size=…` line) and RAM usage (`s__DATA`/`l__DATA` and `s__INITIALIZED`/`l__INITIALIZED` in the map). Warn if either grows. The baseline is 14429 B ROM (0x4000–0x785C) and 464 B RAM (0xC000–0xC1D0).
 
 ## Build configuration
 
-- `project_config.js`: sets the machine (`Machine = "1"`, MSX1), the target (`Target = "ROM_32K"`, a plain 32 KB ROM at 4000h), the MSXgl library modules (`LibModules`) and the project sources (`AddSources`). **Every new `src/*.c` file must be added to `AddSources` by hand.**
+- `project_config.js`: sets the machine (`Machine = "1"`, MSX1), the target (`Target = "ROM_32K"`, a plain 32 KB ROM at 4000h), the MSXgl library modules (`LibModules`) and the project sources (`AddSources`). **Every new `src/**/*.c` file must be added to `AddSources` by hand.** `CompileOpt` puts `src/`, `src/platform`, `src/game`, `src/ui` and `src/data` on the include path, so headers are included by bare name (`"city.h"`) and a new source directory needs its own `-I`.
 - `msxgl_config.h`: the compile-time switches for the MSXgl modules (VDP modes, input devices, Arkos options, the RNG method, and so on).
 - MSXgl is compiled from source according to these two files. If a module is not in `LibModules`, or a feature is turned off in `msxgl_config.h`, it does not exist in the build. Check both before you use an API.
 - Never give a project source file the same name as an MSXgl module (`input.c`, `system.c`, `vdp.c`, `math.c`, `memory.c`, …). The build writes `out/<basename>.rel` for every source file, so the project object overwrites the library object and the link fails. This is why input lives in `controls.c`.
 
 ## Architecture
 
-- `atlantis.c` holds `main()` and the platform layer:
-  - Boot sets Screen 2, loads tiles and sprites, turns off the key click, starts the music, and installs the `H_TIMI` hook.
-  - `MusicFrameHook` is a `__naked` hook. It increments `volatile u8 g_FrameCounter` and calls `AKM_Update`. It wraps that work in `push af`/`pop af` because the BIOS needs A (a copy of VDP status S#0) preserved. It must not touch the VDP.
-  - The game loop runs title → waves → game over → hi-score, forever. Each frame does `controls_update` → `Halt()` (wait for vblank) → `sprites_flush` → map/lane/torpedo updates → collisions.
-- Game modules in `src/`:
+- `atlantis.c` holds `main()` only. Boot sets Screen 2, loads tiles and sprites, turns off the key click, starts the music, calls `frame_install_hook()`, then `flow_run()`.
+- `frame.c` owns `volatile u8 g_FrameCounter` and `MusicFrameHook`, a `__naked` `H_TIMI` hook. The hook increments the counter and calls `AKM_Update`. It wraps that work in `push af`/`pop af` because the BIOS needs A (a copy of VDP status S#0) preserved. It must not touch the VDP.
+- `flow.c` runs title → waves → game over → hi-score, forever. Each in-wave frame does `controls_update` → `Halt()` (wait for vblank) → `sprites_flush` → map/lane/torpedo updates → collisions. The non-interactive loops (wave banner, game over, hi-score) all go through `flow_play_frames(count, what)`.
+- Source layout: `src/platform/` (frame, tiles, sprites, music: the layer that talks to VDP, BIOS and Arkos), `src/game/` (flow, wave, difficulty, lane, queue, gorgons, torpedo, deathray, collision, controls, city, score), `src/ui/` (hud, screens) and `src/data/` (const tables only, no code: `sprite_data`, `city_data`, `text_data`, plus the generated `tileset.h`, `song.h`, `effects.h`). Declare each table in its header with an explicit size (`extern const u8 x[32];`) so a wrong initialiser length fails the build and `sizeof` works in other files. `controls.c` lives in `game/` for now: it reads game state (`map_have_installation`, `torpedoes[]`), so it does not fit `platform/` until the keyboard read is split from the firing logic.
+- Game modules:
   - **wave / difficulty**: `wave_start` seeds the RNG with `g_FrameCounter`, builds the gorgon list for the wave with its velocities, and pushes every gorgon into lane 0's queue.
   - **lane**: four lanes, each a state machine (waiting / moving / exploding). A gorgon that leaves the screen is passed to `lane->next` through its `queue_t`. In the last lane (`next == 0`) the gorgon attacks with the deathray. `g_wave_size` counts down as gorgons finish, and the wave ends when it reaches 0.
-  - **torpedo / collision / controls**: the player's torpedoes, and collision checks against gorgons and the deathray.
-  - **city** (`map_*`): the background, the 7 installations (`map_have_installation[]`), and the water and generator animation driven by `g_FrameCounter`.
-  - **hud / score**: the screens and the score. The score and hi-score are 6 ASCII digits kept in the HUD text buffer (`hud[9..14]` and `hud[23..28]`), most significant digit first. Scoring follows: `score_add(points)` with fighter/bomber +1 (straight) or +2 (angled), bandit +10/+20, and +5 per standing installation at wave end. A credit (bonus installation) is earned each time the score crosses a multiple of 100, and the score saturates at 999999.
-- **Video** (TMS9918A, Screen 2): name-table writes use `TILES_PUT_BUFFER` / `VDP_WriteVRAM_16K` relative to `g_ScreenLayoutLow`. Sprites are 16×16, held in the RAM array `sprites_attributes[17]` and copied to the SAT once per frame right after vblank (`sprites_flush`). The sprite plane assignments are documented in `src/sprites.h`.
-- **Sound**: the Arkos AKM player (`arkos/akm_player`). The song and SFX data are position-dependent and are copied from ROM to fixed RAM addresses at boot (`src/music.c`). Sub-songs are 0 = game, 1 = title, 2 = game over, 3 = hi-score. SFX numbers start at 1 (`ARKOS_SFX_START_IDX=1`).
+  - **torpedo / collision / controls**: the player's torpedoes (`torpedo_fire(launcher)` reads a const launcher table), and torpedo-vs-gorgon collision. Callers hide the torpedo with `torpedo_hide()` before `lane_explode()`.
+  - **deathray**: armed when a gorgon enters the last lane, it follows that gorgon and destroys at most one installation per pass (`deathray_update`, called by the last lane).
+  - **city** (`map_*`, `city_*`): the background, the 7 installations (`map_have_installation[]`), the surviving edges (`city_left_edge`/`city_right_edge`, reset by `map_init`), `city_rebuild()`, and the water and generator animation driven by `g_FrameCounter`.
+  - **hud / screens / score**: `hud.c` is only the HUD text row. `screens.c` draws the title, wave banner, game-over and hi-score text. The score and hi-score are 6 ASCII digits kept in the HUD text buffer (`hud[9..14]` and `hud[23..28]`), most significant digit first. Scoring follows: `score_add(points)` with fighter/bomber +1 (straight) or +2 (angled), bandit +10/+20, and +5 per standing installation at wave end. A credit (bonus installation) is earned each time the score crosses a multiple of 100, and the score saturates at 999999.
+- **Video** (TMS9918A, Screen 2): name-table writes use `TILES_PUT_BUFFER` / `VDP_WriteVRAM_16K` relative to `g_ScreenLayoutLow`. Sprites are 16×16, held in the RAM array `sprites_attributes[17]` and copied to the SAT once per frame right after vblank (`sprites_flush`). The sprite plane assignments are documented in `src/platform/sprites.h`.
+- **Sound**: the Arkos AKM player (`arkos/akm_player`). The song and SFX data are position-dependent and are copied from ROM to fixed RAM addresses at boot (`src/platform/music.c`). Sub-songs are 0 = game, 1 = title, 2 = game over, 3 = hi-score. SFX numbers start at 1 (`ARKOS_SFX_START_IDX=1`).
 - **Memory map** (nothing may overlap):
 
   | Region | Address |
@@ -47,11 +48,11 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 
 ## Generated data (committed, not produced by the build)
 
-`src/tileset.h`, `src/song.h` and `src/effects.h` were made by hand with the MSXtk tools in `../MSXgl/tools/MSXtk/bin/`:
+`src/data/tileset.h`, `src/data/song.h` and `src/data/effects.h` were made by hand with the MSXtk tools in `../MSXgl/tools/MSXtk/bin/`:
 
-- `MSXimg assets/gfx/tiles_msx1.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h`
+- `MSXimg assets/gfx/tiles_msx1.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h`, then move the result to `src/data/`
   - `tiles_msx1.png` is a copy of `tiles.png` with two greens changed to MSXimg's MSX1 palette values (0x66CC66 → 0x3EB849, 0x55AA55 → 0x3AA241). MSXimg's GM2 export ignores custom palettes.
-  - MSXimg exports all 256 tiles as one block. After exporting, set `TILES_COUNT` in `src/tiles.h` to the number of tiles the game uses, then run `python3 tools/trim_tileset.py`. It trims `tileset_Patterns` and `tileset_Colors` in `src/tileset.h` to `TILES_COUNT*8` bytes each and fixes the size comments. If you skip the `TILES_COUNT` update, new tiles are not loaded into VRAM.
+  - MSXimg exports all 256 tiles as one block. After exporting, set `TILES_COUNT` in `src/platform/tiles.h` to the number of tiles the game uses, then run `python3 tools/trim_tileset.py`. It trims `tileset_Patterns` and `tileset_Colors` in `src/data/tileset.h` to `TILES_COUNT*8` bytes each and fixes the size comments. If you skip the `TILES_COUNT` update, new tiles are not loaded into VRAM.
 - `MSXbin assets/sfx/song.akm -t g_SongData -ad -o song.h`
 - `MSXbin assets/sfx/effects.akx -t g_SFXData -ad -o effects.h`
 

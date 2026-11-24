@@ -41,14 +41,17 @@ Run the ROM in an MSX1 emulator such as [openMSX](https://openmsx.org/) or [blue
 
 | Path | Contents |
 |---|---|
-| `atlantis.c` | `main()`, boot, vblank hook and the game loop |
-| `src/` | Game modules: waves, lanes, torpedoes, collisions, city, HUD, score, sprites and music |
+| `atlantis.c` | `main()`: boot, then `flow_run()` |
+| `src/platform/` | Frame hook, tiles, sprites and music: the layer that talks to the VDP, BIOS and Arkos |
+| `src/game/` | Game logic: flow, waves, lanes, torpedoes, collisions, deathray, city, score and controls |
+| `src/ui/` | The HUD row and the title, wave, game-over and hi-score screens |
+| `src/data/` | Const data tables (sprite patterns, city map, screen text) and the generated tileset, song and sound-effect headers |
 | `assets/gfx/` | Tileset source images |
 | `assets/sfx/` | Arkos Tracker 2 song and sound effects (`.aks` sources, `.akm`/`.akx` exports) |
 | `project_config.js` | MSXgl target, library modules and project sources |
 | `msxgl_config.h` | Compile-time switches for the MSXgl modules |
 
-When adding a new `src/*.c` file, list it in `AddSources` in `project_config.js`. Do not name a source file after an MSXgl module (`input.c`, `system.c`, `math.c`, …): the object files would collide at link time.
+When adding a new `.c` file under `src/`, list it in `AddSources` in `project_config.js`. Headers are included by bare name; each source directory is on the include path via `CompileOpt`. Do not name a source file after an MSXgl module (`input.c`, `system.c`, `math.c`, …): the object files would collide at link time.
 
 ## Technical notes
 
@@ -59,7 +62,7 @@ When adding a new `src/*.c` file, list it in `AddSources` in `project_config.js`
 
 ## Regenerating assets
 
-`src/tileset.h`, `src/song.h` and `src/effects.h` are committed and are not produced by the build. They are generated with the MSXtk tools in `MSXgl/tools/MSXtk/bin/`:
+`src/data/tileset.h`, `src/data/song.h` and `src/data/effects.h` are committed and are not produced by the build. They are generated with the MSXtk tools in `MSXgl/tools/MSXtk/bin/`:
 
 ```sh
 MSXimg assets/gfx/tiles_msx1.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h

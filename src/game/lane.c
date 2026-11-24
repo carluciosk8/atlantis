@@ -1,16 +1,14 @@
 #include "lane.h"
 
-#include "city.h"      // g_FrameCounter (deathray animation)
-#include "collision.h" // collision_handle_deathray
+#include "deathray.h"
 #include "gorgons.h"
 #include "music.h"
+#include "sprite_data.h"
 #include "sprites.h"
 #include "tiles.h"     // tiles_set_border
-#include "torpedo.h"   // torpedoes[] (deactivate a torpedo on hit)
 #include "wave.h"
 
 
-u8 g_is_attacking = 0;
 lane_t g_lanes[LANE_COUNT];
 
 // Big-explosion border colour, 1 + counter % 15, for explosion_counter 0..20
@@ -22,7 +20,7 @@ static const u8 lane_big_border[21] =
 };
 
 
-void lane_init(u8 lane_index)
+static void lane_init(u8 lane_index)
 {
     g_lanes[lane_index].sprite1 = &sprites_attributes[2*lane_index];
     g_lanes[lane_index].sprite2 = &sprites_attributes[2*lane_index + 1];
@@ -44,26 +42,7 @@ void lane_init_all(void)
 }
 
 
-void lane_update(lane_t* lane)
-{
-    u8 state = lane->state;
-    if      (state == LANE_STATE_WAITING)       lane_execute_state_waiting(lane);
-    else if (state == LANE_STATE_MOVING)        lane_execute_state_moving(lane);
-    else if (state == LANE_STATE_EXPLODING)     lane_execute_state_exploding(lane, 0);
-    else if (state == LANE_STATE_EXPLODING_BIG) lane_execute_state_exploding(lane, 1);
-}
-
-
-void lane_update_all(void)
-{
-    lane_update(&g_lanes[0]);
-    lane_update(&g_lanes[1]);
-    lane_update(&g_lanes[2]);
-    lane_update(&g_lanes[3]);
-}
-
-
-void lane_execute_state_waiting(lane_t* lane)
+static void lane_execute_state_waiting(lane_t* lane)
 {
     if (lane->queue.size > 0)
     {
@@ -79,12 +58,12 @@ void lane_execute_state_waiting(lane_t* lane)
         lane->sprite2->Color = g_gorgon_list[gorgon_id].color2;
 
         lane->state = LANE_STATE_MOVING;
-        if (!lane->next) g_is_attacking = 1;
+        if (!lane->next) deathray_arm();
     }
 }
 
 
-void lane_execute_state_moving(lane_t* lane)
+static void lane_execute_state_moving(lane_t* lane)
 {
     struct VDP_Sprite* sprite1 = lane->sprite1;
     i8 velocity = wave_velocities[lane->wave_index];
@@ -93,12 +72,7 @@ void lane_execute_state_moving(lane_t* lane)
     lane->sprite2->X = x;
 
     // A gorgon in the last lane fires the deathray while it crosses the city.
-    if (g_is_attacking && !lane->next)
-    {
-        sfx_play(SFX_DEATHRAY, 0, 0);
-        sprites_update_deathray(x, g_FrameCounter & 3);
-        collision_handle_deathray(x, velocity);   // touches neither lane sprite
-    }
+    if (!lane->next) deathray_update(x, velocity);   // touches neither lane sprite
 
     // Off either edge (flying left wraps the 8-bit X past the limit): hand the
     // gorgon to the next lane, or end its run if this was the last lane.
@@ -114,13 +88,13 @@ void lane_execute_state_moving(lane_t* lane)
         else
         {
             g_wave_size--;
-            sprites_disable_deathray();
+            deathray_hide();
         }
     }
 }
 
 
-void lane_execute_state_exploding(lane_t* lane, u8 is_big)
+static void lane_execute_state_exploding(lane_t* lane, u8 is_big)
 {
     if (lane->explosion_sprite_id > 4)
     {
@@ -145,18 +119,33 @@ void lane_execute_state_exploding(lane_t* lane, u8 is_big)
 }
 
 
-void lane_start_state_exploding(u8 torpedo_index, u8 lane_index, u8 is_big)
+static void lane_update(lane_t* lane)
+{
+    u8 state = lane->state;
+    if      (state == LANE_STATE_WAITING)       lane_execute_state_waiting(lane);
+    else if (state == LANE_STATE_MOVING)        lane_execute_state_moving(lane);
+    else if (state == LANE_STATE_EXPLODING)     lane_execute_state_exploding(lane, 0);
+    else if (state == LANE_STATE_EXPLODING_BIG) lane_execute_state_exploding(lane, 1);
+}
+
+
+void lane_update_all(void)
+{
+    lane_update(&g_lanes[0]);
+    lane_update(&g_lanes[1]);
+    lane_update(&g_lanes[2]);
+    lane_update(&g_lanes[3]);
+}
+
+
+void lane_explode(u8 lane_index, u8 is_big)
 {
     g_lanes[lane_index].explosion_counter = 0;
     g_lanes[lane_index].explosion_sprite_id = 0;
     g_lanes[lane_index].sprite1->Color = COLOR_LIGHT_RED;
     g_lanes[lane_index].sprite2->Color = COLOR_LIGHT_YELLOW;
     g_lanes[lane_index].state = LANE_STATE_EXPLODING;
-    if (lane_index == LANE_LAST) sprites_disable_deathray();
-
-    torpedoes[torpedo_index].is_active = 0;
-    torpedoes[torpedo_index].sprite->X = 0;
-    torpedoes[torpedo_index].sprite->Y = SPRITE_Y_HIDDEN;
+    if (lane_index == LANE_LAST) deathray_hide();
 
     if (is_big)
     {

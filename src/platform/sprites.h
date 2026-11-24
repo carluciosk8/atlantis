@@ -19,13 +19,8 @@
 
 extern struct VDP_Sprite sprites_attributes[SPRITE_COUNT];
 
-// Explosion animation pattern tables (8x8 pattern indices, 16x16 = multiple of 4).
-extern const u8 sprites_explosion_anim1[];
-extern const u8 sprites_explosion_anim2[];
-
 
 void sprites_init(void);                    // set 16x16 mode + load all sprite patterns
+void sprites_hide_all(void);                // make every sprite transparent (not flushed)
 void sprites_flush(void);                   // write sprites_attributes to the SAT
 void sprites_set_magnification(bool on);    // sprite size x1 (false) / x2 (true), keeps 16x16
-void sprites_disable_deathray(void);
-void sprites_update_deathray(u8 x, u8 frame);

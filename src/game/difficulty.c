@@ -6,9 +6,9 @@
 
 // Cumulative percentages for difficulty_get_random_speed(): a roll below
 // speed2_limit gives speed 2, below speed3_limit speed 3, otherwise speed 4.
-u8 difficulty_speed2_limit;
-u8 difficulty_speed3_limit;
-u8 difficulty_bandit_chance;    // percent
+static u8 difficulty_speed2_limit;
+static u8 difficulty_speed3_limit;
+static u8 difficulty_bandit_chance;    // percent
 
 
 // Difficulty tiers: { wave size, speed2_limit, speed3_limit, bandit chance }.

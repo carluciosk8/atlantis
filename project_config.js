@@ -20,23 +20,31 @@ SourceDir = "src";
 
 AddSources =
 [
-    `${SourceDir}/tiles.c`,
-    `${SourceDir}/city.c`,
-    `${SourceDir}/hud.c`,
-    `${SourceDir}/wave.c`,
-    `${SourceDir}/score.c`,
-    `${SourceDir}/sprites.c`,
-    `${SourceDir}/queue.c`,
-    `${SourceDir}/gorgons.c`,
-    `${SourceDir}/difficulty.c`,
-    `${SourceDir}/lane.c`,
-    `${SourceDir}/torpedo.c`,
-    `${SourceDir}/collision.c`,
-    `${SourceDir}/controls.c`,
-    `${SourceDir}/music.c`,
+    `${SourceDir}/platform/frame.c`,
+    `${SourceDir}/game/flow.c`,
+    `${SourceDir}/platform/tiles.c`,
+    `${SourceDir}/game/city.c`,
+    `${SourceDir}/ui/hud.c`,
+    `${SourceDir}/ui/screens.c`,
+    `${SourceDir}/game/wave.c`,
+    `${SourceDir}/game/score.c`,
+    `${SourceDir}/platform/sprites.c`,
+    `${SourceDir}/game/queue.c`,
+    `${SourceDir}/game/gorgons.c`,
+    `${SourceDir}/game/difficulty.c`,
+    `${SourceDir}/game/lane.c`,
+    `${SourceDir}/game/torpedo.c`,
+    `${SourceDir}/game/collision.c`,
+    `${SourceDir}/game/deathray.c`,
+    `${SourceDir}/game/controls.c`,
+    `${SourceDir}/platform/music.c`,
+    `${SourceDir}/data/sprite_data.c`,
+    `${SourceDir}/data/city_data.c`,
+    `${SourceDir}/data/text_data.c`,
 ];
 
-CompileOpt = `-I${SourceDir}`;
+// Headers are included by bare name, so every source directory is on the include path.
+CompileOpt = `-I${SourceDir} -I${SourceDir}/platform -I${SourceDir}/game -I${SourceDir}/ui -I${SourceDir}/data`;
 
 //-- Target MSX machine version (string): "1" = MSX1
 Machine = "1";
