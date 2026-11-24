@@ -1,7 +1,7 @@
 {
     "version": 4,
     "env": {
-        "msxgl": "${env:MSXGL_PATH}"
+        "msxgl": "${workspaceFolder}/../MSXgl"
     },
     "configurations": [
         {
@@ -23,7 +23,7 @@
                 "TARGET=TARGET_ROM_32K",
                 "ROM_SIZE=32",
                 "MSX_VERSION=MSX_1",
-                "__sfr=",
+                "__sfr=volatile unsigned char",
                 "__at(x)=",
                 "__naked=",
                 "__critical=",
@@ -37,7 +37,15 @@
                 "__code=",
                 "__xdata=",
                 "__near=",
-                "__far="
+                "__far=",
+                "__z88dk_fastcall=",
+                "__z88dk_callee=",
+                "__preserves_regs(...)=",
+                "__sbit=",
+                "__using(x)=",
+                "__nonbanked=",
+                "__smallc=",
+                "__trap="
             ],
             "compilerPath": "",
             "cStandard": "c11",
