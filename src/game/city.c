@@ -47,8 +47,8 @@ static void map_put_cloud(u8 x, u8 y, bool big)
 
 
 // Sky: the plain sky tile, a light-blue gradient on the top rows and a few
-// clouds. The clouds keep clear of the wave banner (columns 11..20, rows 5..7),
-// which is restored with plain sky tiles.
+// clouds. The clouds keep clear of the wave banner and its frame (columns 10..21,
+// rows 4..8), which is restored with plain sky tiles.
 static void map_draw_sky(void)
 {
     VDP_FillScreen_GM2(MAP_TILE_SKY);
@@ -58,7 +58,7 @@ static void map_draw_sky(void)
     map_put_cloud(3,  5, TRUE);
     map_put_cloud(24, 4, TRUE);
     map_put_cloud(6,  8, TRUE);
-    map_put_cloud(9,  4, FALSE);
+    map_put_cloud(7,  4, FALSE);
     map_put_cloud(22, 8, FALSE);
     map_put_cloud(15, 10, FALSE);
 }

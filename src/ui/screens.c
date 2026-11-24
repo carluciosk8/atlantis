@@ -59,6 +59,7 @@ void screens_draw_game_over(void)
 
 void screens_draw_wave_banner(void)
 {
+    screens_draw_frame(10, 4, 12, 5);
     TILES_FILL(11, 5, ' ', sizeof(wave_text));
     TILES_PUT_BUFFER(11, 6, wave_text, sizeof(wave_text));
     TILES_FILL(11, 7, ' ', sizeof(wave_text));
@@ -67,9 +68,9 @@ void screens_draw_wave_banner(void)
 
 void screens_clear_wave_banner(void)
 {
-    TILES_FILL(11, 5, MAP_TILE_SKY, sizeof(wave_text));
-    TILES_FILL(11, 6, MAP_TILE_SKY, sizeof(wave_text));
-    TILES_FILL(11, 7, MAP_TILE_SKY, sizeof(wave_text));
+    // The frame and its interior: 12 x 5 tiles at (10, 4).
+    for (u8 row = 4; row < 9; row++)
+        TILES_FILL(10, row, MAP_TILE_SKY, sizeof(wave_text) + 2);
 }
 
 
