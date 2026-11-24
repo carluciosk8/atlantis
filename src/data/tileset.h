@@ -2,7 +2,7 @@
 // ██  ▀  █▄  ▀██▄ ▀ ▄█ ▄  ▄█▄█ ▄▀██
 // █  █ █  ▀▀  ▄█  █  █ ██ ██ █  ▀██
 // ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀          ▀▀
-// Data generated using MSXimg 1.22.1 on Tue Nov 24 00:04:38 2026
+// Data generated using MSXimg 1.22.1 on Tue Nov 24 00:16:57 2026
 // by Guillaume "Aoineko" Blanchard (2022) under CC BY-SA free license
 // ─────────────────────────────────────────────────────────────────────────────
 // Generation parameters:
@@ -1470,8 +1470,80 @@ const unsigned char tileset_Patterns[] =
 	0x00, /* ........ */ 
 	0x00, /* ........ */ 
 	0x00, /* ........ */ 
+// Sprite[161] (offset:1288)
+	0x0F, /* ....#### */ 
+	0x1F, /* ...##### */ 
+	0x3F, /* ..###### */ 
+	0x7F, /* .####### */ 
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+// Sprite[162] (offset:1296)
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x18, /* ...##... */ 
+	0x18, /* ...##... */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+// Sprite[163] (offset:1304)
+	0xF0, /* ####.... */ 
+	0xF8, /* #####... */ 
+	0xFC, /* ######.. */ 
+	0xFE, /* #######. */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+// Sprite[164] (offset:1312)
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+	0x98, /* #..##... */ 
+	0x98, /* #..##... */ 
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+// Sprite[165] (offset:1320)
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x18, /* ...##... */ 
+	0x18, /* ...##... */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+// Sprite[166] (offset:1328)
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+	0x80, /* #....... */ 
+	0x7F, /* .####### */ 
+	0x3F, /* ..###### */ 
+	0x1F, /* ...##### */ 
+	0xF0, /* ####.... */ 
+// Sprite[167] (offset:1336)
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x18, /* ...##... */ 
+	0x18, /* ...##... */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+// Sprite[168] (offset:1344)
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0xFE, /* #######. */ 
+	0xFC, /* ######.. */ 
+	0xF8, /* #####... */ 
+	0x0F, /* ....#### */ 
 };
-// Patterns size: 1288 Bytes (trimmed to the first 161 tiles; see TILES_COUNT)
+// Patterns size: 1352 Bytes (trimmed to the first 169 tiles; see TILES_COUNT)
 
 // Colors Table
 const unsigned char tileset_Colors[] =
@@ -1798,7 +1870,23 @@ const unsigned char tileset_Colors[] =
 	0xF4, 0xF4, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 
 // Sprite[160] (offset:3328)
 	0xF4, 0xF4, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 
+// Sprite[161] (offset:3336)
+	0xB7, 0xA7, 0xA7, 0xA7, 0xBA, 0xBA, 0xBA, 0xBA, 
+// Sprite[162] (offset:3344)
+	0xBB, 0xAA, 0xAA, 0xBA, 0xBA, 0xAA, 0xAA, 0xAA, 
+// Sprite[163] (offset:3352)
+	0xB7, 0xA7, 0xA7, 0xA7, 0xAA, 0xAA, 0xAA, 0xAA, 
+// Sprite[164] (offset:3360)
+	0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 
+// Sprite[165] (offset:3368)
+	0xAA, 0xAA, 0xAA, 0xBA, 0xBA, 0xAA, 0xAA, 0xAA, 
+// Sprite[166] (offset:3376)
+	0xBA, 0xBA, 0xBA, 0xBA, 0xA7, 0xA7, 0xA7, 0x76, 
+// Sprite[167] (offset:3384)
+	0xAA, 0xAA, 0xAA, 0xBA, 0xBA, 0xAA, 0xAA, 0x66, 
+// Sprite[168] (offset:3392)
+	0xAA, 0xAA, 0xAA, 0xAA, 0xA7, 0xA7, 0xA7, 0x76, 
 };
-// Colors size: 1288 Bytes (trimmed to the first 161 tiles; see TILES_COUNT)
+// Colors size: 1352 Bytes (trimmed to the first 169 tiles; see TILES_COUNT)
 
-// Total size: 2576 Bytes
+// Total size: 2704 Bytes
