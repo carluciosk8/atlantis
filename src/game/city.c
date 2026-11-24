@@ -22,7 +22,7 @@ u8 city_right_edge;
 static u8 map_state = MAP_STATE_IDLE;
 static u8 map_explosion_counter = 0;
 
-// Last water/generator animation frame written to VRAM (0xFF forces a redraw).
+// Last wave/generator animation frame written to VRAM (0xFF forces a redraw).
 static u8 map_anim_frame = 0xFF;
 
 
@@ -114,22 +114,24 @@ void map_start_explosion(u8 x, u8 y)
 void map_update(void)
 {
     // Water and generator animation, driven by the 8-bit frame counter.
-    // water_frame advances every 4 vblanks (0..3), air_frame every 8 (0..1).
-    // The tiles are rewritten only when water_frame differs from the last
+    // wave_frame (the wave crest, 0..15) advances every 2 vblanks; water_frame
+    // (the aqua generators, 0..3) every 4 and air_frame (0..1) every 8.
+    // The tiles are rewritten only when wave_frame differs from the last
     // value written, so a frame overrun that skips a value still redraws.
-    u8 water_frame = (u8)(g_FrameCounter >> 2) & 3;
+    u8 wave_frame = (u8)(g_FrameCounter >> 1) & (MAP_WATER_FRAMES - 1);
 
-    if (water_frame != map_anim_frame)
+    if (wave_frame != map_anim_frame)
     {
+        u8 water_frame = (wave_frame >> 1) & 3;
         u8 air_frame = water_frame >> 1;
-        map_anim_frame = water_frame;
+        map_anim_frame = wave_frame;
 
         if (map_have_installation[MAP_GENERATOR_AIR_ID])   VDP_Poke_GM2(17, 13, map_generator_air[0] + air_frame);
         if (map_have_installation[MAP_GENERATOR_AQUA1_ID]) VDP_Poke_GM2(13, 15, map_generator_aqua[0] + water_frame);
         if (map_have_installation[MAP_GENERATOR_AQUA2_ID]) VDP_Poke_GM2(28, 15, map_generator_aqua[0] + water_frame);
 
-        VDP_WriteVRAM_16K(map_water_anim[water_frame], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(2, 14, 0), 12);
-        VDP_WriteVRAM_16K(map_water_anim[water_frame], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(18, 14, 0), 12);
+        VDP_WriteVRAM_16K(map_water_anim[wave_frame], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(2, 14, 0), 12);
+        VDP_WriteVRAM_16K(map_water_anim[wave_frame], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(18, 14, 0), 12);
     }
 
     // Building explosion: 5 frames of 4 vblanks each.

@@ -40,8 +40,10 @@ extern const u8 map_cloud_small[2];
 // Background name-table rows 12..22 (11 rows of 32 tiles).
 extern const u8 map_background[11*32];
 
-// Water animation, 4 frames of 12 tiles (written to row 14 at x=2 and x=18).
-extern const u8 map_water_anim[4][12];
+// Wave crest animation, 16 frames of 12 tiles (written to row 14 at x=2 and
+// x=18). A frame alternates two tiles, so the wave flows across the whole row.
+#define MAP_WATER_FRAMES       16
+extern const u8 map_water_anim[MAP_WATER_FRAMES][12];
 
 // Installation tiles (the generators' first tile is their first animation frame).
 extern const u8 map_acropolis_command[2];
