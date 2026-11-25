@@ -2,7 +2,7 @@
 
 #include "arkos/akm_player.h"
 
-#include "song.h"     // const u8 g_SongData[] (1108 B, exported for 0xD000)
+#include "song.h"     // const u8 g_SongData[] (1811 B, exported for 0xD000)
 #include "effects.h"  // const u8 g_SFXData[]  ( 283 B, exported for 0xE000)
 
 
@@ -10,7 +10,7 @@
 // binaries are position-dependent: their internal pointers assume the data
 // sits at the export address, so the copies must land exactly here and
 // nothing else may overlap these regions.
-#define SONG_ADDR 0xD000   // song: 1108 B -> 0xD000..0xD454
+#define SONG_ADDR 0xD000   // song: 1811 B -> 0xD000..0xD713
 #define SFX_ADDR  0xE000   // SFX:   283 B -> 0xE000..0xE11B
 
 

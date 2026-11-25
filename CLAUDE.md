@@ -41,7 +41,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
   | Region | Address |
   |---|---|
   | Game RAM | 0xC000 and up (must stay below 0xD000) |
-  | Song | 0xD000–0xD454 |
+  | Song | 0xD000–0xD713 |
   | SFX | 0xE000–0xE11B |
   | Arkos buffer (`ARKOS_BUFFER_ADDR`) | 0xF000–0xF113 |
   | Stack top | HIMEM (normally 0xF380) |
@@ -53,7 +53,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 - `MSXimg assets/gfx/tiles_msx1.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h`, then move the result to `src/data/`
   - `tiles_msx1.png` is a copy of `tiles.png` with two greens changed to MSXimg's MSX1 palette values (0x66CC66 → 0x3EB849, 0x55AA55 → 0x3AA241). MSXimg's GM2 export ignores custom palettes.
   - MSXimg exports all 256 tiles as one block. After exporting, set `TILES_COUNT` in `src/platform/tiles.h` to the number of tiles the game uses, then run `python3 tools/trim_tileset.py`. It trims `tileset_Patterns` and `tileset_Colors` in `src/data/tileset.h` to `TILES_COUNT*8` bytes each and fixes the size comments. If you skip the `TILES_COUNT` update, new tiles are not loaded into VRAM.
-- `MSXbin assets/sfx/song.akm -t g_SongData -ad -o song.h`
+- `MSXbin assets/sfx/song_v2.akm -t g_SongData -ad -o song.h`
 - `MSXbin assets/sfx/effects.akx -t g_SFXData -ad -o effects.h`
 
 The `.akm` and `.akx` files were exported from Arkos Tracker 2 with "Encode to address" set to 0xD000 and 0xE000. If the song data must move, the developer has to re-export it from the Arkos Tracker GUI. Give the developer the format and the address to use, and wait for the new export. The original assets (`tiles.png`, `song.aks`, `effects.aks`) are the source of truth: never overwrite or delete them.
