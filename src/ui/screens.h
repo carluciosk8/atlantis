@@ -7,6 +7,7 @@
 // runs the frames in between, except for the title blink below.
 
 void screens_draw_title(void);
+void screens_animate_title(void);       // waves and generators; call every frame
 void screens_blink_title(void);         // blink "HIT TRIGGER TO START" (blocks ~2.3 s)
 
 void screens_draw_wave_banner(void);    // " WAVE nnn " from wave_text

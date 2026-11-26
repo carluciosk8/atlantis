@@ -64,13 +64,22 @@ static void flow_play_wave(void)
 }
 
 
+// Animate the title until the fire button is pressed.
+static void flow_wait_start(void)
+{
+    // First wait until a held button is released, then for a new press.
+    while (controls_fire_held())  { Halt(); screens_animate_title(); }
+    while (!controls_fire_held()) { Halt(); screens_animate_title(); }
+}
+
+
 void flow_run(void)
 {
     for (;;)
     {
         music_play(MUSIC_TITLE);
         screens_draw_title();
-        controls_wait_fire();
+        flow_wait_start();
         screens_blink_title();
 
         music_play(MUSIC_GAME);

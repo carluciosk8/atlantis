@@ -12,11 +12,16 @@ extern const u8 title_logo_row2[23];
 extern const u8 title_logo_row3[24];
 extern const u8 title_logo_row4[24];
 
-// Title backdrop: stars on the black sky ({ x, y, tile } name-table cells)
-// and the 4-row seabed strip drawn at name-table row 19.
+// Title backdrop: stars on the black sky ({ x, y, tile } name-table cells),
+// the animated waves at name-table row 19 and the 3-row seabed strip below them,
+// with an animated generator near each end.
 #define TITLE_STAR_COUNT       34
-#define TITLE_SEABED_ROW       19
-#define TITLE_SEABED_ROWS      4
+#define TITLE_WAVE_ROW         19
+#define TITLE_SEABED_ROW       20
+#define TITLE_SEABED_ROWS      3
+#define TITLE_GENERATOR_ROW    21
+#define TITLE_GENERATOR1_X     3
+#define TITLE_GENERATOR2_X     28
 extern const u8 title_stars[TITLE_STAR_COUNT][3];
 extern const u8 title_seabed[TITLE_SEABED_ROWS*32];
 

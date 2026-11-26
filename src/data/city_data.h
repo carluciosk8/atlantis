@@ -42,7 +42,7 @@ extern const u8 map_background[11*32];
 
 // Wave animation, 16 frames of 12 tiles (written to row 14 at x=2 and x=18).
 // The tiles are 16 stages of one wave's life (swell, curl, break, foam), 2 tiles
-// each from 0xAB. A frame holds 6 waves at different stages; any two stages join
+// each from 0xA5. A frame holds 6 waves at different stages; any two stages join
 // without a seam. The second pool runs half a cycle ahead of the first.
 #define MAP_WATER_FRAMES       16
 extern const u8 map_water_anim[MAP_WATER_FRAMES][12];

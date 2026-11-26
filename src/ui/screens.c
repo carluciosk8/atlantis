@@ -1,20 +1,21 @@
 #include "screens.h"
 
 #include "city.h"
+#include "frame.h"
 #include "text_data.h"
 #include "tiles.h"
 #include "wave.h"
 
 
 // Gold plaque frame tiles (one tile thick, rounded outer corners).
-#define FRAME_TILE_TL   0xA1
-#define FRAME_TILE_T    0xA2
-#define FRAME_TILE_TR   0xA3
-#define FRAME_TILE_L    0xA4
-#define FRAME_TILE_R    0xA5
-#define FRAME_TILE_BL   0xA6
-#define FRAME_TILE_B    0xA7
-#define FRAME_TILE_BR   0xA8
+#define FRAME_TILE_TL   0x9B
+#define FRAME_TILE_T    0x9C
+#define FRAME_TILE_TR   0x9D
+#define FRAME_TILE_L    0x9E
+#define FRAME_TILE_R    0x9F
+#define FRAME_TILE_BL   0xA0
+#define FRAME_TILE_B    0xA1
+#define FRAME_TILE_BR   0xA2
 
 // Draw the frame on the border cells of the w x h tile rectangle at (x, y);
 // the interior is left for the caller.
@@ -74,6 +75,28 @@ void screens_clear_wave_banner(void)
 }
 
 
+// Last title animation frame written to VRAM (0xFF forces a redraw).
+static u8 title_anim_frame;
+
+
+void screens_animate_title(void)
+{
+    // Same timing as in game: one frame every 4 vblanks.
+    u8 wave_frame = (u8)(g_FrameCounter >> 2) & (MAP_WATER_FRAMES - 1);
+    if (wave_frame == title_anim_frame) return;
+    title_anim_frame = wave_frame;
+
+    // The 32-column row takes 12 + 12 + 8 tiles from three different frames.
+    TILES_PUT_BUFFER(0,  TITLE_WAVE_ROW, map_water_anim[wave_frame], 12);
+    TILES_PUT_BUFFER(12, TITLE_WAVE_ROW, map_water_anim[wave_frame ^ (MAP_WATER_FRAMES / 2)], 12);
+    TILES_PUT_BUFFER(24, TITLE_WAVE_ROW, map_water_anim[(wave_frame + 4) & (MAP_WATER_FRAMES - 1)], 8);
+
+    u8 generator = map_generator_aqua[0] + (wave_frame & 3);
+    VDP_Poke_GM2(TITLE_GENERATOR1_X, TITLE_GENERATOR_ROW, generator);
+    VDP_Poke_GM2(TITLE_GENERATOR2_X, TITLE_GENERATOR_ROW, generator);
+}
+
+
 void screens_draw_title(void)
 {
     VDP_EnableDisplay(FALSE);
@@ -91,6 +114,8 @@ void screens_draw_title(void)
     for (u8 i = 0; i < TITLE_STAR_COUNT; i++, star += 3)
         VDP_Poke_GM2(star[0], star[1], star[2]);
     TILES_PUT_BUFFER(0, TITLE_SEABED_ROW, title_seabed, sizeof(title_seabed));
+    title_anim_frame = 0xFF;
+    screens_animate_title();
     VDP_EnableDisplay(TRUE);
 }
 
@@ -104,11 +129,13 @@ void screens_blink_title(void)
         for (u8 frame = 0; frame < 7; frame++)
         {
             Halt();
+            screens_animate_title();
             TILES_PUT_BUFFER_CENTERED(13, title_blank);
         }
         for (u8 frame = 0; frame < 7; frame++)
         {
             Halt();
+            screens_animate_title();
             TILES_PUT_BUFFER_CENTERED(13, title_press_start);
         }
     }

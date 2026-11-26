@@ -54,8 +54,7 @@ void controls_update(void)
 }
 
 
-void controls_wait_fire(void)
+bool controls_fire_held(void)
 {
-    while (read_controller() & JOY_INPUT_TRIGGER_A)    { Halt(); }  // wait until a held button is released
-    while (!(read_controller() & JOY_INPUT_TRIGGER_A)) { Halt(); }  // then wait for a new press
+    return (read_controller() & JOY_INPUT_TRIGGER_A) != 0;
 }
