@@ -1,5 +1,5 @@
 import re, zipfile
-src = open('song.xml', encoding='utf-8').read()
+src = open('song_v1.xml', encoding='utf-8').read()
 
 NAMES = {'C':0,'C#':1,'D':2,'D#':3,'E':4,'F':5,'F#':6,'G':7,'G#':8,'A':9,'A#':10,'B':11}
 def note(s):
@@ -210,6 +210,6 @@ new = [subsong_xml('Game', 6, 1, game_pats, subs[0]),
 out = src
 for old, nw in zip(subs, new):
     out = out.replace(old, nw)
-open('song_v2.xml', 'w', encoding='utf-8').write(out)
-z = zipfile.ZipFile('song_v2.aks', 'w', zipfile.ZIP_DEFLATED); z.write('song_v2.xml', 'song.aks'); z.close()
+open('song.xml', 'w', encoding='utf-8').write(out)
+z = zipfile.ZipFile('song.aks', 'w', zipfile.ZIP_DEFLATED); z.write('song.xml', 'song.aks'); z.close()
 print('ok')

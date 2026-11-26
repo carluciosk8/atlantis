@@ -3,8 +3,8 @@
 State at the end of the first music session (2026-11-24). Nothing here is committed yet.
 
 ## Done
-- New songs for all four sub-songs, in `assets/sfx/song_v2.aks` (source) and `song_v2.akm` (export at 0xD000). The originals `song.aks` / `song.akm` are untouched and are no longer used by the build.
-- `src/data/song.h` is generated from `song_v2.akm`. Size 1811 B, so 0xD000..0xD713. `music.c` comments and the CLAUDE.md memory map were updated.
+- New songs for all four sub-songs, in `assets/sfx/song.aks` (source) and `song.akm` (export at 0xD000). They replaced the original files of the same names, which commit `3039941` still has.
+- `src/data/song.h` is generated from `song.akm`. Size 1811 B, so 0xD000..0xD713. `music.c` comments and the CLAUDE.md memory map were updated.
 - Build at that point: ROM 17409 B (0x4000-0x8400), RAM 464 B.
 - Effects (`effects.aks/.akx`, `effects.h`) are **not touched yet**.
 
@@ -18,7 +18,7 @@ State at the end of the first music session (2026-11-24). Nothing here is commit
 
 The old "Silence" sub-song was replaced by the Game song, and the old "In game" song (which used to play on the title) was replaced by the new Title.
 
-## Instruments (added to song_v2.aks, numbers 9-14; old 1-8 kept)
+## Instruments (added to song.aks, numbers 9-14; old 1-8 kept)
 | # | Name | Use |
 |---|---|---|
 | 9 | Deep Bass | Bass. Plain tone, no noise, no hardware envelope. Notes at octave 2/3. |
@@ -40,13 +40,14 @@ The old kick (7) is still used in "full" game patterns. Old instruments 1-6 and 
 ## Workflow (all native Linux, nothing needs the Arkos GUI)
 Tools: `/home/carlucio/Applications/ArkosTracker3/tools/` (`SongToAkm`, `SongToSoundEffects`, `SongToWav`). The GUI is `/home/carlucio/Applications/ArkosTracker3/ArkosTracker3`.
 
-1. Generator: `tools/gen_song.py` builds `song_v2.aks` from the original `song.aks` plus the new instruments and the compositions. It is a plain Python script (use `python3 -I`). It expects `song.xml` in the current directory:
-   `unzip -p assets/sfx/song.aks | tr -d '\r' | grep -v '^\s*$' > song.xml`
-   Run it in a scratch directory. It writes `song_v2.xml` and `song_v2.aks`. Edit the compositions or `MASTER` at the bottom of the script.
-   Alternatively, edit `song_v2.aks` directly in the Arkos GUI. The script would then no longer match, so prefer one or the other.
-2. Export: `SongToAkm -bin -adr 0xD000 song_v2.aks song_v2.akm`. The `-s` option of the tools is 1-based (1=Game ... 4=Hi Score).
-3. Audition without an emulator: `SongToWav -s <1..4> song_v2.aks out.wav`.
-4. Header: `MSXbin assets/sfx/song_v2.akm -t g_SongData -ad -o song.h`. MSXbin returns a non-zero exit code even on success, so do not chain it with `&&`. Then change the `Soure file:` line to a relative path and move the result to `src/data/song.h`.
+1. Generator: `tools/gen_song.py` builds `song.aks` from the original song plus the new instruments and the compositions. It is a plain Python script (use `python3 -I`). It expects the original as `song_v1.xml` in the current directory. In a scratch directory, get the original from git history:
+   `git -C <repo> show 3039941:assets/sfx/song.aks > song_v1.aks`
+   `unzip -p song_v1.aks | tr -d '\r' | grep -v '^\s*$' > song_v1.xml`
+   Run it there. It writes `song.xml` and `song.aks`; copy `song.aks` to `assets/sfx/`. Edit the compositions or `MASTER` at the bottom of the script.
+   Alternatively, edit `song.aks` directly in the Arkos GUI. The script would then no longer match, so prefer one or the other.
+2. Export: `SongToAkm -bin -adr 0xD000 song.aks song.akm`. The `-s` option of the tools is 1-based (1=Game ... 4=Hi Score).
+3. Audition without an emulator: `SongToWav -s <1..4> song.aks out.wav`.
+4. Header: `MSXbin assets/sfx/song.akm -t g_SongData -ad -o song.h`. MSXbin returns a non-zero exit code even on success, so do not chain it with `&&`. Then change the `Soure file:` line to a relative path and move the result to `src/data/song.h`.
 5. Update the size in `src/platform/music.c` (two comments) and the song row of the memory map in `CLAUDE.md`. The song region 0xD000..0xDFFF allows 4096 B before the SFX at 0xE000.
 6. `./build.sh`, then report ROM and RAM (baselines in CLAUDE.md are stale, see below).
 
@@ -59,5 +60,4 @@ Tools: `/home/carlucio/Applications/ArkosTracker3/tools/` (`SongToAkm`, `SongToS
 
 ## Open points
 - CLAUDE.md baselines (14429 B ROM, 464 B RAM) are stale: HEAD before the music work was already 16706 B ROM (earlier HUD and screen commits), RAM unchanged at 464 B. Refresh them when committing.
-- The CLAUDE.md section on generated data still says song.akm / song.aks. It now needs to say `song_v2.*` (only the MSXbin command line was updated). Decide whether to rename `song_v2.*` to `song.*` once the originals are no longer needed.
 - Untested in the emulator: loop points, song switches, SFX audibility over the music, 50 Hz timing (the game-over song is cut at 4.5 s).
