@@ -2,11 +2,11 @@
 // ██  ▀  █▄  ▀██▄ ▀ ▄█ ▄  ▄█▄█ ▄▀██
 // █  █ █  ▀▀  ▄█  █  █ ██ ██ █  ▀██
 // ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀          ▀▀
-// Data generated using MSXimg 1.22.1 on Wed Nov 25 23:46:25 2026
+// Data generated using MSXimg 1.22.1 on Wed Nov 25 23:52:40 2026
 // by Guillaume "Aoineko" Blanchard (2022) under CC BY-SA free license
 // ─────────────────────────────────────────────────────────────────────────────
 // Generation parameters:
-//  - Input file:     assets/gfx/tiles_msx1.png
+//  - Input file:     assets/gfx/tiles.png
 //  - Mode:           Graphic Mode 2
 //  - Start position: 0, 0
 //  - Sprite size:    256, 64 (gap: 0, 0)

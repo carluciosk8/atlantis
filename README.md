@@ -65,12 +65,12 @@ When adding a new `.c` file under `src/`, list it in `AddSources` in `project_co
 `src/data/tileset.h`, `src/data/song.h` and `src/data/effects.h` are committed and are not produced by the build. They are generated with the MSXtk tools in `MSXgl/tools/MSXtk/bin/`:
 
 ```sh
-MSXimg assets/gfx/tiles_msx1.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h
+MSXimg assets/gfx/tiles.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h
 MSXbin assets/sfx/song.akm -t g_SongData -ad -o song.h
 MSXbin assets/sfx/effects.akx -t g_SFXData -ad -o effects.h
 ```
 
-`tiles_msx1.png` is a copy of `tiles.png` with two greens adjusted to the MSX1 palette. The `.akm` and `.akx` files are exported from Arkos Tracker 2 with "Encode to address" set to `D000h` and `E000h` respectively.
+`tiles.png` uses the colours of MSXimg's MSX1 palette. The `.akm` and `.akx` files are exported from Arkos Tracker 2 with "Encode to address" set to `D000h` and `E000h` respectively.
 
 ## Licence
 

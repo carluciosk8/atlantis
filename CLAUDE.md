@@ -50,13 +50,13 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 
 `src/data/tileset.h`, `src/data/song.h` and `src/data/effects.h` were made by hand with the MSXtk tools in `../MSXgl/tools/MSXtk/bin/`:
 
-- `MSXimg assets/gfx/tiles_msx1.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h`, then move the result to `src/data/`
-  - `tiles_msx1.png` is a copy of `tiles.png` with two greens changed to MSXimg's MSX1 palette values (0x66CC66 → 0x3EB849, 0x55AA55 → 0x3AA241). MSXimg's GM2 export ignores custom palettes.
+- `MSXimg assets/gfx/tiles.png -mode gm2 -pal msx1 --tilesUnique -name tileset -out tileset.h`, then move the result to `src/data/`
+  - Paint `tiles.png` with the colours of MSXimg's MSX1 palette, as the existing tiles do. MSXimg's GM2 export ignores custom palettes.
   - MSXimg exports all 256 tiles as one block. After exporting, set `TILES_COUNT` in `src/platform/tiles.h` to the number of tiles the game uses, then run `python3 tools/trim_tileset.py`. It trims `tileset_Patterns` and `tileset_Colors` in `src/data/tileset.h` to `TILES_COUNT*8` bytes each and fixes the size comments. If you skip the `TILES_COUNT` update, new tiles are not loaded into VRAM.
 - `MSXbin assets/sfx/song_v2.akm -t g_SongData -ad -o song.h`
 - `MSXbin assets/sfx/effects.akx -t g_SFXData -ad -o effects.h`
 
-The `.akm` and `.akx` files were exported from Arkos Tracker 2 with "Encode to address" set to 0xD000 and 0xE000. If the song data must move, the developer has to re-export it from the Arkos Tracker GUI. Give the developer the format and the address to use, and wait for the new export. The original assets (`tiles.png`, `song.aks`, `effects.aks`) are the source of truth: never overwrite or delete them.
+The `.akm` and `.akx` files were exported from Arkos Tracker 2 with "Encode to address" set to 0xD000 and 0xE000. If the song data must move, the developer has to re-export it from the Arkos Tracker GUI. Give the developer the format and the address to use, and wait for the new export. The original assets (`tiles.png`, `song.aks`, `effects.aks`) are the source of truth: never overwrite or delete them. The one exception is `tiles.png`, which is edited in place for graphics changes the developer asked for.
 
 ## Reference material (read-only, shared with other projects; never edit)
 
