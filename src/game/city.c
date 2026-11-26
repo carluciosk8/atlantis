@@ -114,15 +114,15 @@ void map_start_explosion(u8 x, u8 y)
 void map_update(void)
 {
     // Water and generator animation, driven by the 8-bit frame counter.
-    // wave_frame (the wave crest, 0..15) advances every 2 vblanks; water_frame
-    // (the aqua generators, 0..3) every 4 and air_frame (0..1) every 8.
+    // wave_frame (the waves, 0..15) and water_frame (the aqua generators, 0..3)
+    // advance every 4 vblanks, air_frame (0..1) every 8.
     // The tiles are rewritten only when wave_frame differs from the last
     // value written, so a frame overrun that skips a value still redraws.
-    u8 wave_frame = (u8)(g_FrameCounter >> 1) & (MAP_WATER_FRAMES - 1);
+    u8 wave_frame = (u8)(g_FrameCounter >> 2) & (MAP_WATER_FRAMES - 1);
 
     if (wave_frame != map_anim_frame)
     {
-        u8 water_frame = (wave_frame >> 1) & 3;
+        u8 water_frame = wave_frame & 3;
         u8 air_frame = water_frame >> 1;
         map_anim_frame = wave_frame;
 
@@ -131,7 +131,7 @@ void map_update(void)
         if (map_have_installation[MAP_GENERATOR_AQUA2_ID]) VDP_Poke_GM2(28, 15, map_generator_aqua[0] + water_frame);
 
         VDP_WriteVRAM_16K(map_water_anim[wave_frame], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(2, 14, 0), 12);
-        VDP_WriteVRAM_16K(map_water_anim[wave_frame], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(18, 14, 0), 12);
+        VDP_WriteVRAM_16K(map_water_anim[wave_frame ^ (MAP_WATER_FRAMES / 2)], g_ScreenLayoutLow + TILES_MAKE_ADDRESS(18, 14, 0), 12);
     }
 
     // Building explosion: 5 frames of 4 vblanks each.

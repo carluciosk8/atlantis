@@ -40,8 +40,10 @@ extern const u8 map_cloud_small[2];
 // Background name-table rows 12..22 (11 rows of 32 tiles).
 extern const u8 map_background[11*32];
 
-// Wave crest animation, 16 frames of 12 tiles (written to row 14 at x=2 and
-// x=18). A frame alternates two tiles, so the wave flows across the whole row.
+// Wave animation, 16 frames of 12 tiles (written to row 14 at x=2 and x=18).
+// The tiles are 16 stages of one wave's life (swell, curl, break, foam), 2 tiles
+// each from 0xAB. A frame holds 6 waves at different stages; any two stages join
+// without a seam. The second pool runs half a cycle ahead of the first.
 #define MAP_WATER_FRAMES       16
 extern const u8 map_water_anim[MAP_WATER_FRAMES][12];
 
