@@ -49,6 +49,21 @@ static void sky_draw_beam(void)
 }
 
 
+// Load the beam tiles into the pool slots of the top and middle banks.
+static void sky_load_beam_tiles(void)
+{
+    for (u8 bank = TILES_BANK_TOP; bank <= TILES_BANK_MIDDLE; bank++)
+    {
+        u16 pattern = g_ScreenPatternLow + bank * TILES_BANK_SIZE;
+        u16 color = g_ScreenColorLow + bank * TILES_BANK_SIZE;
+        VDP_WriteVRAM_16K(sky_beam_tiles, pattern + SKY_BEAM_SLOTS_LOW * 8, SKY_BEAM_SLOTS_LOW_COUNT * 8);
+        VDP_WriteVRAM_16K(sky_beam_tiles + SKY_BEAM_SLOTS_LOW_COUNT * 8, pattern + SKY_BEAM_SLOTS_HIGH * 8, (SKY_BEAM_TILES - SKY_BEAM_SLOTS_LOW_COUNT) * 8);
+        VDP_FillVRAM_16K(SKY_BEAM_COLOR, color + SKY_BEAM_SLOTS_LOW * 8, SKY_BEAM_SLOTS_LOW_COUNT * 8);
+        VDP_FillVRAM_16K(SKY_BEAM_COLOR, color + SKY_BEAM_SLOTS_HIGH * 8, (SKY_BEAM_TILES - SKY_BEAM_SLOTS_LOW_COUNT) * 8);
+    }
+}
+
+
 // Shift one tile row of art (8 lines of width-1 bytes) right by `shift` pixels
 // into sky_buffer, as `width` tiles.
 static void sky_shift(const u8* src, u8 width, u8 shift)
@@ -157,7 +172,11 @@ void sky_draw(u8 sky)
     // Night spotlights, starting at the first layout.
     sky_beam = 0;
     sky_beam_timer = SKY_BEAM_FRAMES;
-    if (sky == SKY_NIGHT) sky_draw_beam();
+    if (sky == SKY_NIGHT)
+    {
+        sky_load_beam_tiles();
+        sky_draw_beam();
+    }
 
     // Moving objects: line colours of their reserved tiles, then the first frame.
     sky_objects = sky_objects_of[sky];
@@ -206,7 +225,7 @@ void sky_update(void)
     if (sky_current == SKY_NIGHT && --sky_beam_timer == 0)
     {
         sky_beam_timer = SKY_BEAM_FRAMES;
-        sky_beam = (sky_beam + 1) & (SKY_BEAM_STEPS - 1);
+        if (++sky_beam == SKY_BEAM_STEPS) sky_beam = 0;
         sky_draw_beam();
     }
 
