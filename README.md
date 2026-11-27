@@ -12,7 +12,7 @@ Gorgon ships attack Atlantis in waves. Defend the city's installations by shooti
 - Each installation still standing at the end of a wave is worth 5 points.
 - Every time the score crosses a multiple of 100 you earn a bonus installation. The score saturates at 999999.
 
-The game cycles through the title screen, the waves, game over and the hi-score screen.
+The game cycles through the title screen, the waves, game over and the hi-score screen. The sky changes with each wave: day with drifting clouds, evening with a setting sun and birds, then night, when the gorgons are black and can only be seen in the sweeping spotlights.
 
 ## Building
 
@@ -43,9 +43,9 @@ Run the ROM in an MSX1 emulator such as [openMSX](https://openmsx.org/) or [blue
 |---|---|
 | `atlantis.c` | `main()`: boot, then `flow_run()` |
 | `src/platform/` | Frame hook, tiles, sprites and music: the layer that talks to the VDP, BIOS and Arkos |
-| `src/game/` | Game logic: flow, waves, lanes, torpedoes, collisions, deathray, city, score and controls |
+| `src/game/` | Game logic: flow, waves, lanes, torpedoes, collisions, deathray, city, sky, score and controls |
 | `src/ui/` | The HUD row and the title, wave, game-over and hi-score screens |
-| `src/data/` | Const data tables (sprite patterns, city map, screen text) and the generated tileset, song and sound-effect headers |
+| `src/data/` | Const data tables (sprite patterns, city map, sky layouts and art, screen text) and the generated tileset, song and sound-effect headers |
 | `assets/gfx/` | Tileset source images |
 | `assets/sfx/` | Arkos Tracker 2 song and sound effects (`.aks` sources, `.akm`/`.akx` exports) |
 | `project_config.js` | MSXgl target, library modules and project sources |
@@ -56,6 +56,7 @@ When adding a new `.c` file under `src/`, list it in `AddSources` in `project_co
 ## Technical notes
 
 - **Video:** TMS9918A in Screen 2, with 16×16 sprites held in RAM and copied to the sprite attribute table once per frame, right after vblank.
+- **Sky:** each sky recolours the cyan sky pixels of the shared tiles in the top and middle screen thirds. Clouds and birds move 1 px at a time by rewriting the patterns of a few reserved tiles; the night spotlights swap whole precomputed sky frames.
 - **Sound:** the Arkos AKM player runs from the vblank (`H_TIMI`) hook. The song and sound effects are position-dependent and are copied from ROM to fixed RAM addresses at boot.
 - **Memory map:** game RAM from `C000h`, song at `D000h`, sound effects at `E000h`, Arkos buffer at `F000h`.
 - **Code conventions:** no float, long, `printf` or `malloc`. Plain `char` is unsigned in this build, so signed 8-bit values use `i8`.
@@ -70,7 +71,7 @@ MSXbin assets/sfx/song.akm -t g_SongData -ad -o song.h
 MSXbin assets/sfx/effects.akx -t g_SFXData -ad -o effects.h
 ```
 
-`tiles.png` uses the colours of MSXimg's MSX1 palette. The `.akm` and `.akx` files are exported from Arkos Tracker 2 with "Encode to address" set to `D000h` and `E000h` respectively.
+`tiles.png` uses the colours of MSXimg's MSX1 palette. After exporting, set `TILES_COUNT` in `src/platform/tiles.h` (currently 213) and run `python3 tools/trim_tileset.py`. The `.akm` and `.akx` files are exported from Arkos Tracker 2 with "Encode to address" set to `D000h` and `E000h` respectively.
 
 ## Licence
 

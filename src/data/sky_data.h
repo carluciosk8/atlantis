@@ -31,10 +31,10 @@ extern const u8 sky_recolour[SKY_RECOLOUR_COUNT][2];
 
 // Decorations, tile strips: { x, y, first tile, count }. The evening has the
 // setting sun and cloud streaks; the day has none, and the night stars are
-// part of the sky_beam_sky frames.
+// part of the sky_beam_sky frames. Only the evening has strips: sky_draw_strips
+// walks sky_evening_strips for sky_strip_count[sky] entries.
 #define SKY_EVENING_STRIPS     5
 extern const u8 sky_evening_strips[SKY_EVENING_STRIPS][4];
-extern const u8* const sky_strips[SKY_COUNT];
 extern const u8 sky_strip_count[SKY_COUNT];
 
 

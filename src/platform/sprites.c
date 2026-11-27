@@ -27,6 +27,21 @@ struct VDP_Sprite sprites_attributes[SPRITE_COUNT] =
 
 
 //-----------------------------------------------------------------------------
+// Load the horizontal mirror of a 16x16 pattern at 8x8 index `index`: the left
+// and right columns swap and each byte's bits are reversed.
+static void sprites_load_mirrored(const u8* src, u8 index)
+{
+    u8 buffer[32];
+    for (u8 i = 0; i < 16; i++)
+    {
+        buffer[i]      = Math_Flip(src[16 + i]);
+        buffer[16 + i] = Math_Flip(src[i]);
+    }
+    VDP_LoadSpritePattern(buffer, index, 4);
+}
+
+
+//-----------------------------------------------------------------------------
 // Set 16x16 sprite mode and load every sprite pattern into VRAM.
 // Must run after VDP_SetMode + VDP_ClearVRAM (ClearVRAM wipes the pattern table).
 void sprites_init(void)
@@ -34,18 +49,19 @@ void sprites_init(void)
     VDP_SetSpriteFlag(VDP_SPRITE_SIZE_16);
 
     // Gorgon fighters/bombers/bandits: pattern index p -> 8x8 index p*4, 4 units.
-    VDP_LoadSpritePattern(sprite_fighter1,      0,  4);
-    VDP_LoadSpritePattern(sprite_fighter2,      4,  4);
-    VDP_LoadSpritePattern(sprite_fighter1_flip, 8,  4);
-    VDP_LoadSpritePattern(sprite_fighter2_flip, 12, 4);
-    VDP_LoadSpritePattern(sprite_bomber1,       16, 4);
-    VDP_LoadSpritePattern(sprite_bomber2,       20, 4);
-    VDP_LoadSpritePattern(sprite_bomber1_flip,  24, 4);
-    VDP_LoadSpritePattern(sprite_bomber2_flip,  28, 4);
-    VDP_LoadSpritePattern(sprite_bandit1,       32, 4);
-    VDP_LoadSpritePattern(sprite_bandit2,       36, 4);
-    VDP_LoadSpritePattern(sprite_bandit1_flip,  40, 4);
-    VDP_LoadSpritePattern(sprite_bandit2_flip,  44, 4);
+    // The flying-left patterns are mirrors of the flying-right ones.
+    VDP_LoadSpritePattern(sprite_fighter1,  0,  4);
+    VDP_LoadSpritePattern(sprite_fighter2,  4,  4);
+    sprites_load_mirrored(sprite_fighter1,  8);
+    sprites_load_mirrored(sprite_fighter2,  12);
+    VDP_LoadSpritePattern(sprite_bomber1,   16, 4);
+    VDP_LoadSpritePattern(sprite_bomber2,   20, 4);
+    sprites_load_mirrored(sprite_bomber1,   24);
+    sprites_load_mirrored(sprite_bomber2,   28);
+    VDP_LoadSpritePattern(sprite_bandit1,   32, 4);
+    VDP_LoadSpritePattern(sprite_bandit2,   36, 4);
+    sprites_load_mirrored(sprite_bandit1,   40);
+    sprites_load_mirrored(sprite_bandit2,   44);
 
     // Torpedoes (12-14), explosion frames (15-24) and deathray slots (25-28):
     // 17 16x16 patterns = 544 bytes at 8x8 index 48 (= 16x16 index 12).

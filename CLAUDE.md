@@ -12,7 +12,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 - Outputs: `emul/rom/atlantis.rom` (32 KB) and the linker map `out/atlantis.map`. Both `out/` and `emul/` are git-ignored.
 - There are no tests and no linter. A passing build only shows that the code compiles. Real behaviour has to be checked in an emulator, which the agent cannot run, so after a change list what the developer should check there.
 - Never call the system `sdcc` or `node`. The MSXgl tool uses its own embedded SDCC (4.6.0) from `MSXgl/tools/sdcc`. Do not install or replace tools.
-- After each build, report ROM usage (the `Seg[0000]: Lower=4000h Higher=…h Size=…` line) and RAM usage (`s__DATA`/`l__DATA` and `s__INITIALIZED`/`l__INITIALIZED` in the map). Warn if either grows. The baseline is 14429 B ROM (0x4000–0x785C) and 464 B RAM (0xC000–0xC1D0).
+- After each build, report ROM usage (the `Seg[0000]: Lower=4000h Higher=…h Size=…` line) and RAM usage (`s__DATA`/`l__DATA` and `s__INITIALIZED`/`l__INITIALIZED` in the map). Warn if either grows. The baseline is 20788 B ROM (0x4000–0x9133) and 495 B RAM (0xC000–0xC1EF), after the cleanup that followed commit c63fd25 (sky per wave).
 
 ## Build configuration
 
@@ -36,6 +36,25 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
   - **city** (`map_*`, `city_*`): the background, the 7 installations (`map_have_installation[]`), the surviving edges (`city_left_edge`/`city_right_edge`, reset by `map_init`), `city_rebuild()`, and the water and generator animation driven by `g_FrameCounter`.
   - **hud / screens / score**: `hud.c` is only the HUD text row. `screens.c` draws the title, wave banner, game-over and hi-score text. The score and hi-score are 6 ASCII digits kept in the HUD text buffer (`hud[9..14]` and `hud[23..28]`), most significant digit first. Scoring follows: `score_add(points)` with fighter/bomber +1 (straight) or +2 (angled), bandit +10/+20, and +5 per standing installation at wave end. A credit (bonus installation) is earned each time the score crosses a multiple of 100, and the score saturates at 999999.
 - **Video** (TMS9918A, Screen 2): name-table writes use `TILES_PUT_BUFFER` / `VDP_WriteVRAM_16K` relative to `g_ScreenLayoutLow`. Sprites are 16×16, held in the RAM array `sprites_attributes[17]` and copied to the SAT once per frame right after vblank (`sprites_flush`). The sprite plane assignments are documented in `src/platform/sprites.h`.
+- **Tile map** (`tiles.png`, one 8×8 tile per index, 32 per sheet row). The same tileset is loaded into all three screen thirds; the sky code recolours some of it per third.
+
+  | Tiles | Use |
+  |---|---|
+  | 0x00–0x1C | title logo |
+  | 0x23 | plain sky (cyan; recoloured per sky, black at night) |
+  | 0x60–0x76 | night spotlight beams (light yellow on black) |
+  | 0x8C–0x8F | day sky gradient |
+  | 0x90–0x97 | evening cloud streaks |
+  | 0x98–0x9A | stars (title and night) |
+  | 0x9B–0xA2 | gold plaque frame; 0xA3–0xA4 HUD ornaments |
+  | 0xA5–0xC4 | breaking-wave animation (see `map_water_anim`) |
+  | 0xC5–0xCC | evening sky bands; 0xCD–0xD4 setting sun (the last loaded tile, `TILES_COUNT` = 213) |
+  | 0xD5–0xDF, 0xF9–0xFF | free, not loaded (a new tile here needs a higher `TILES_COUNT`) |
+  | 0x06, 0x0A, 0x0E, 0x19, 0x63, 0x7F | free: loaded but never drawn (0x06 duplicated 0x03; the rest are leftovers). Reuse them before growing `TILES_COUNT` |
+  | 0xE0–0xF8 | reserved: patterns written at run time by `sky.c` (clouds, birds); keep them blank in `tiles.png` |
+
+  The other indices hold the font (ASCII positions), the city background and the installations.
+- **Sky colours**: in the game screen, cyan (7) means sky. Any tile with sky pixels that is shown in rows 0..15 must be listed in `sky_recolour` (`sky_data.c`), or it keeps a cyan patch in the evening and at night. The night spotlight frames (`sky_beam_sky`, 3 × 32×12 tiles, stars included) are plain tables: edit them directly when a beam or a star moves.
 - **Sound**: the Arkos AKM player (`arkos/akm_player`). The song and SFX data are position-dependent and are copied from ROM to fixed RAM addresses at boot (`src/platform/music.c`). Sub-songs are 0 = game, 1 = title, 2 = game over, 3 = hi-score. SFX numbers start at 1 (`ARKOS_SFX_START_IDX=1`).
 - **Memory map** (nothing may overlap):
 

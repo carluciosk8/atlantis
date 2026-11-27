@@ -28,7 +28,6 @@ extern const u8 title_seabed[TITLE_SEABED_ROWS*32];
 // Title text.
 extern const u8 title_press_start[20];
 extern const u8 title_copyright[26];
-extern const u8 title_blank[20];
 
 // Hi-score screen, 3 lines.
 extern const u8 text_hi_score_1[19];

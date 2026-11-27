@@ -58,8 +58,8 @@
 
 // MAIN-Bios module setting
 #define BIOS_USE_MAINROM			TRUE	// Allow use of Main-ROM routines
-#define BIOS_USE_VDP				TRUE	// Give access to Main-ROM routines related to VDP
-#define BIOS_USE_PSG				TRUE	// Give access to Main-ROM routines related to PSG
+#define BIOS_USE_VDP				FALSE	// Give access to Main-ROM routines related to VDP
+#define BIOS_USE_PSG				FALSE	// Give access to Main-ROM routines related to PSG
 #define BIOS_USE_SUBROM				TRUE	// Allow use of Sub-ROM routines (MSX2/2+/turbo R)
 #define BIOS_USE_DISKROM			TRUE	// Allow use of Disk-ROM routines
 
@@ -93,7 +93,7 @@
 
 #define VDP_USE_VRAM16K				TRUE	// Use 16K VRAM access functions on MSX2
 #define VDP_USE_SPRITE				TRUE	// Use sprite handling functions
-#define VDP_USE_COMMAND				TRUE	// Use VDP commands wrapper functions
+#define VDP_USE_COMMAND				FALSE	// Use VDP commands wrapper functions
 #define VDP_USE_CUSTOM_CMD			FALSE	// Use custom VDP commands through data buffer
 #define VDP_AUTO_INIT				TRUE	// Call VDP_Initialize() at the first call to VDP_SetMode()
 #define VDP_USE_UNDOCUMENTED		TRUE	// Allow the use of undocumented screen mode (WIP)
@@ -511,7 +511,7 @@
 // - RANDOM_8_RACC ................ R Register accumulation (7-bits)
 // - RANDOM_8_ION ................. Ion Random
 // - RANDOM_8_MEMORY .............. Memory Peek from R
-#define RANDOM_8_METHOD				RANDOM_8_ION
+#define RANDOM_8_METHOD				RANDOM_8_NONE
 // - RANDOM_16_NONE ............... No 16-bits random
 // - RANDOM_16_LINEAR ............. Linear congruential
 // - RANDOM_16_XORSHIFT ........... XOR Shift

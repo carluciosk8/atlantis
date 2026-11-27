@@ -131,7 +131,7 @@ void screens_blink_title(void)
         {
             Halt();
             screens_animate_title();
-            TILES_PUT_BUFFER_CENTERED(13, title_blank);
+            TILES_FILL(16 - sizeof(title_press_start)/2, 13, ' ', sizeof(title_press_start));
         }
         for (u8 frame = 0; frame < 7; frame++)
         {

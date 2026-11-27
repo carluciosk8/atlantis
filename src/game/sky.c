@@ -30,10 +30,10 @@ static void sky_put(u8 x, u8 y, u8 tile)
 }
 
 
-// Draw the decorations of the current sky (sun and streaks, or stars).
+// Draw the decorations of the current sky (the evening sun and streaks).
 static void sky_draw_strips(void)
 {
-    const u8* strip = sky_strips[sky_current];
+    const u8* strip = sky_evening_strips[0];
     for (u8 i = sky_strip_count[sky_current]; i > 0; i--, strip += 4)
         for (u8 k = 0; k < strip[3]; k++)
             sky_put(strip[0] + k, strip[1], strip[2] + k);

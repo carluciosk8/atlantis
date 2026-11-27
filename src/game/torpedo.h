@@ -13,7 +13,6 @@ extern u8 torpedo_next;
 typedef struct
 {
     struct VDP_Sprite* sprite;
-    u8 sprite_number;
     u8 is_active;
     i8 dx;
     i8 dy;

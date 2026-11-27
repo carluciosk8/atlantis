@@ -35,12 +35,11 @@ const u8 sky_evening_strips[SKY_EVENING_STRIPS][4] =
 {
     { 23, 10, 0xCD, 4 },    // setting sun, top
     { 23, 11, 0xD1, 4 },    // setting sun, bottom
-    {  2,  4, 0xD5, 4 },    // red streaks
-    { 24,  4, 0xD5, 4 },
-    {  6,  9, 0xD9, 4 },    // magenta streak over the horizon
+    {  2,  4, 0x90, 4 },    // red streaks
+    { 24,  4, 0x90, 4 },
+    {  6,  9, 0x94, 4 },    // magenta streak over the horizon
 };
 
-const u8* const sky_strips[SKY_COUNT] = { (const u8*)sky_evening_strips, (const u8*)sky_evening_strips, (const u8*)sky_evening_strips };
 const u8 sky_strip_count[SKY_COUNT] = { 0, SKY_EVENING_STRIPS, 0 };
 
 
