@@ -82,6 +82,7 @@ void flow_run(void)
     for (;;)
     {
         music_play(MUSIC_TITLE);
+        sky_reset_stars();
         screens_draw_title();
         flow_wait_start();
 

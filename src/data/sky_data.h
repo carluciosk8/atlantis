@@ -53,16 +53,29 @@ extern const u8 sky_beam_sky[SKY_BEAM_LAYOUTS][SKY_ROWS*32];
 extern const u8 sky_beam_row12[SKY_BEAM_LAYOUTS][2];
 extern const u8 sky_beam_order[SKY_BEAM_STEPS];   // layout of each sweep step
 
-// Beam tiles (light yellow on black), loaded at night into the top and middle
-// pattern banks: the first SKY_BEAM_SLOTS_LOW_COUNT at 0x60 (the beam tiles of
-// tiles.png, overwritten), the rest at 0xD5 (unloaded slots and the cloud and
-// bird slots, unused at night). Nothing else draws these slots in rows 0..15.
-#define SKY_BEAM_TILES         64
+// Night pool tiles, loaded at night into the top and middle pattern banks: the
+// first SKY_BEAM_SLOTS_LOW_COUNT at 0x60 (the beam tiles of tiles.png,
+// overwritten), the rest at 0xD5 (unloaded slots and the cloud and bird slots,
+// unused at night). Nothing else draws these slots in rows 0..15. The beam
+// tiles are light yellow on black; the last SKY_BEAM_STAR_TILES are the dim
+// stars, coloured by sky_beam_star_colors. The moon (0x06, 0x0A, 0x0E, 0x19)
+// and the bright stars are in tiles.png.
+#define SKY_BEAM_TILES         66
+#define SKY_BEAM_STAR_TILES    2
 #define SKY_BEAM_SLOTS_LOW     0x60
 #define SKY_BEAM_SLOTS_LOW_COUNT 23
 #define SKY_BEAM_SLOTS_HIGH    0xD5
 #define SKY_BEAM_COLOR         0xB1   // light yellow on black
 extern const u8 sky_beam_tiles[SKY_BEAM_TILES*8];
+extern const u8 sky_beam_star_colors[SKY_BEAM_STAR_TILES*8];
+
+// Night star twinkle: the colour (foreground on black) of each bright star tile
+// (0x98..0x9A), cycled every SKY_TWINKLE_FRAMES in the top and middle banks.
+#define SKY_STAR_FIRST         0x98
+#define SKY_STAR_COUNT         3
+#define SKY_TWINKLE_FRAMES     8
+#define SKY_TWINKLE_PHASES     4
+extern const u8 sky_twinkle[SKY_TWINKLE_PHASES][SKY_STAR_COUNT];
 
 
 // Moving objects (clouds and birds), drawn into reserved tile slots whose

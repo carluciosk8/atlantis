@@ -2,11 +2,11 @@
 // ██  ▀  █▄  ▀██▄ ▀ ▄█ ▄  ▄█▄█ ▄▀██
 // █  █ █  ▀▀  ▄█  █  █ ██ ██ █  ▀██
 // ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀          ▀▀
-// Data generated using MSXimg 1.22.1 on Thu Nov 26 22:36:57 2026
+// Data generated using MSXimg 1.22.1 on Thu Nov 26 23:35:40 2026
 // by Guillaume "Aoineko" Blanchard (2022) under CC BY-SA free license
 // ─────────────────────────────────────────────────────────────────────────────
 // Generation parameters:
-//  - Input file:     assets/gfx/tiles.png
+//  - Input file:     /home/carlucio/Projects/atlantis/assets/gfx/tiles.png
 //  - Mode:           Graphic Mode 2
 //  - Start position: 0, 0
 //  - Sprite size:    256, 64 (gap: 0, 0)
@@ -76,14 +76,14 @@ const unsigned char tileset_Patterns[] =
 	0x00, /* ........ */ 
 	0x00, /* ........ */ 
 // Sprite[6] (offset:48)
+	0x07, /* .....### */ 
+	0x01, /* .......# */ 
 	0x00, /* ........ */ 
-	0xFE, /* #######. */ 
-	0xFE, /* #######. */ 
-	0xFE, /* #######. */ 
-	0xFE, /* #######. */ 
-	0xFE, /* #######. */ 
-	0xFE, /* #######. */ 
-	0xFE, /* #######. */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
 // Sprite[7] (offset:56)
 	0x55, /* .#.#.#.# */ 
 	0x7F, /* .####### */ 
@@ -112,14 +112,14 @@ const unsigned char tileset_Patterns[] =
 	0xF8, /* #####... */ 
 	0xFC, /* ######.. */ 
 // Sprite[10] (offset:80)
-	0x80, /* #....... */ 
-	0x00, /* ........ */ 
-	0x00, /* ........ */ 
-	0x00, /* ........ */ 
-	0x00, /* ........ */ 
-	0x00, /* ........ */ 
-	0x00, /* ........ */ 
-	0x00, /* ........ */ 
+	0xE0, /* ###..... */ 
+	0xF8, /* #####... */ 
+	0x7C, /* .#####.. */ 
+	0x3E, /* ..#####. */ 
+	0x1E, /* ...####. */ 
+	0x1F, /* ...##### */ 
+	0x0F, /* ....#### */ 
+	0x0F, /* ....#### */ 
 // Sprite[11] (offset:88)
 	0x00, /* ........ */ 
 	0x00, /* ........ */ 
@@ -148,14 +148,14 @@ const unsigned char tileset_Patterns[] =
 	0xFE, /* #######. */ 
 	0xFE, /* #######. */ 
 // Sprite[14] (offset:112)
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
+	0x00, /* ........ */ 
 	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
+	0x07, /* .....### */ 
 // Sprite[15] (offset:120)
 	0x7F, /* .####### */ 
 	0x7F, /* .####### */ 
@@ -247,14 +247,14 @@ const unsigned char tileset_Patterns[] =
 	0xFE, /* #######. */ 
 	0x00, /* ........ */ 
 // Sprite[25] (offset:200)
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x01, /* .......# */ 
-	0x00, /* ........ */ 
+	0x0F, /* ....#### */ 
+	0x0F, /* ....#### */ 
+	0x1F, /* ...##### */ 
+	0x1E, /* ...####. */ 
+	0x3E, /* ..#####. */ 
+	0x7C, /* .#####.. */ 
+	0xF8, /* #####... */ 
+	0xE0, /* ###..... */ 
 // Sprite[26] (offset:208)
 	0x7F, /* .####### */ 
 	0x7F, /* .####### */ 
@@ -1957,7 +1957,7 @@ const unsigned char tileset_Colors[] =
 // Sprite[5] (offset:2088)
 	0x11, 0x44, 0x44, 0x44, 0x55, 0x55, 0x55, 0x77, 
 // Sprite[6] (offset:2096)
-	0x11, 0x41, 0x41, 0x41, 0x51, 0x51, 0x51, 0x71, 
+	0xB1, 0xB1, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
 // Sprite[7] (offset:2104)
 	0x41, 0x41, 0x41, 0x41, 0x51, 0x51, 0x51, 0x71, 
 // Sprite[8] (offset:2112)
@@ -1965,7 +1965,7 @@ const unsigned char tileset_Colors[] =
 // Sprite[9] (offset:2120)
 	0x11, 0x41, 0x41, 0x41, 0x51, 0x51, 0x51, 0x71, 
 // Sprite[10] (offset:2128)
-	0x41, 0x44, 0x44, 0x44, 0x55, 0x55, 0x55, 0x77, 
+	0xB1, 0xB1, 0xB1, 0xB1, 0xB1, 0xB1, 0xB1, 0xB1, 
 // Sprite[11] (offset:2136)
 	0x11, 0x11, 0x11, 0x11, 0x11, 0xB1, 0x31, 0x31, 
 // Sprite[12] (offset:2144)
@@ -1973,7 +1973,7 @@ const unsigned char tileset_Colors[] =
 // Sprite[13] (offset:2152)
 	0x71, 0x71, 0xF1, 0xF1, 0xB1, 0xB1, 0x31, 0x31, 
 // Sprite[14] (offset:2160)
-	0x71, 0x71, 0xF1, 0xF1, 0xB1, 0xB1, 0x31, 0x31, 
+	0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0xB1, 0xB1, 
 // Sprite[15] (offset:2168)
 	0x71, 0x71, 0xF1, 0xF1, 0xB1, 0xB1, 0x31, 0x31, 
 // Sprite[16] (offset:2176)
@@ -1995,7 +1995,7 @@ const unsigned char tileset_Colors[] =
 // Sprite[24] (offset:2240)
 	0x31, 0x21, 0x21, 0x21, 0xC1, 0xC1, 0xC1, 0x11, 
 // Sprite[25] (offset:2248)
-	0x31, 0x21, 0x21, 0x21, 0xC1, 0xC1, 0xC1, 0x11, 
+	0xB1, 0xB1, 0xB1, 0xB1, 0xB1, 0xB1, 0xB1, 0xB1, 
 // Sprite[26] (offset:2256)
 	0x31, 0x21, 0x21, 0x21, 0xC1, 0xC1, 0xC1, 0x11, 
 // Sprite[27] (offset:2264)

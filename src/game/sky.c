@@ -17,6 +17,10 @@ static u8 sky_timer[SKY_MAX_OBJECTS];   // frames until the next 1 px step
 static u8 sky_beam;
 static u8 sky_beam_timer;
 
+// Night star twinkle: phase in sky_twinkle, frames until the next one.
+static u8 sky_twinkle_phase;
+static u8 sky_twinkle_timer;
+
 // Tiles rewritten per frame at most by sky_update().
 #define SKY_STEP_BUDGET     8
 
@@ -59,8 +63,29 @@ static void sky_load_beam_tiles(void)
         VDP_WriteVRAM_16K(sky_beam_tiles, pattern + SKY_BEAM_SLOTS_LOW * 8, SKY_BEAM_SLOTS_LOW_COUNT * 8);
         VDP_WriteVRAM_16K(sky_beam_tiles + SKY_BEAM_SLOTS_LOW_COUNT * 8, pattern + SKY_BEAM_SLOTS_HIGH * 8, (SKY_BEAM_TILES - SKY_BEAM_SLOTS_LOW_COUNT) * 8);
         VDP_FillVRAM_16K(SKY_BEAM_COLOR, color + SKY_BEAM_SLOTS_LOW * 8, SKY_BEAM_SLOTS_LOW_COUNT * 8);
-        VDP_FillVRAM_16K(SKY_BEAM_COLOR, color + SKY_BEAM_SLOTS_HIGH * 8, (SKY_BEAM_TILES - SKY_BEAM_SLOTS_LOW_COUNT) * 8);
+        VDP_FillVRAM_16K(SKY_BEAM_COLOR, color + SKY_BEAM_SLOTS_HIGH * 8, (SKY_BEAM_TILES - SKY_BEAM_SLOTS_LOW_COUNT - SKY_BEAM_STAR_TILES) * 8);
+        VDP_WriteVRAM_16K(sky_beam_star_colors, color + (SKY_BEAM_SLOTS_HIGH + SKY_BEAM_TILES - SKY_BEAM_SLOTS_LOW_COUNT - SKY_BEAM_STAR_TILES) * 8, SKY_BEAM_STAR_TILES * 8);
     }
+}
+
+
+// Colour the bright star tiles with twinkle phase `phase` (top and middle banks).
+static void sky_set_star_colors(u8 phase)
+{
+    u8 buffer[SKY_STAR_COUNT * 8];
+    const u8* colors = sky_twinkle[phase];
+    u8* out = buffer;
+    for (u8 k = SKY_STAR_COUNT; k > 0; k--, colors++)
+        for (u8 i = 8; i > 0; i--)
+            *out++ = *colors;
+    VDP_WriteVRAM_16K(buffer, g_ScreenColorLow + TILES_BANK_TOP * TILES_BANK_SIZE + SKY_STAR_FIRST * 8, sizeof(buffer));
+    VDP_WriteVRAM_16K(buffer, g_ScreenColorLow + TILES_BANK_MIDDLE * TILES_BANK_SIZE + SKY_STAR_FIRST * 8, sizeof(buffer));
+}
+
+
+void sky_reset_stars(void)
+{
+    sky_set_star_colors(0);
 }
 
 
@@ -169,9 +194,13 @@ void sky_draw(u8 sky)
 
     sky_draw_strips();
 
-    // Night spotlights, starting at the first layout.
+    // Night spotlights, starting at the first layout, and the star twinkle
+    // (phase 0 is also the stars' own colour, for the other skies).
     sky_beam = 0;
     sky_beam_timer = SKY_BEAM_FRAMES;
+    sky_twinkle_phase = 0;
+    sky_twinkle_timer = SKY_TWINKLE_FRAMES;
+    sky_set_star_colors(0);
     if (sky == SKY_NIGHT)
     {
         sky_load_beam_tiles();
@@ -227,6 +256,14 @@ void sky_update(void)
         sky_beam_timer = SKY_BEAM_FRAMES;
         if (++sky_beam == SKY_BEAM_STEPS) sky_beam = 0;
         sky_draw_beam();
+    }
+
+    // Night: twinkle the bright stars.
+    if (sky_current == SKY_NIGHT && --sky_twinkle_timer == 0)
+    {
+        sky_twinkle_timer = SKY_TWINKLE_FRAMES;
+        sky_twinkle_phase = (sky_twinkle_phase + 1) & (SKY_TWINKLE_PHASES - 1);
+        sky_set_star_colors(sky_twinkle_phase);
     }
 
 

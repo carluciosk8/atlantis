@@ -24,7 +24,11 @@ void sky_set(u8 sky);
 // Redraw the clouds, birds or spotlights over a cleared banner.
 void sky_refresh(void);
 
-// Move the clouds or birds, or sweep the night spotlights; call once per in-wave frame. Not called while a
+// Move the clouds or birds, or sweep the night spotlights and twinkle the stars; call once per in-wave frame. Not called while a
 // banner or plaque is shown, so the animation never draws over them, and the
 // next step of each object rewrites its name-table cells.
 void sky_update(void);
+
+// Give the bright star tiles their own colours back (the title uses them after
+// a night wave may have left them mid-twinkle).
+void sky_reset_stars(void);
