@@ -31,16 +31,17 @@ The other instruments (1-8 from the original song, and 14 Soft Tom) are not used
 | 3 | Enemy explodes | `SFX_EXPLOSION` | 1 |
 | 4 | Enemy explodes big | `SFX_BIG_EXPLOSION` | 1 |
 | 5 | Crash | `SFX_INSTALLATION_LOST` | 0 |
-| 6 | Start | unused | |
+| 6 | Start | `SFX_START` (`music_play_start_jingle`, title → game) | 0; also on 1 and 2 at inverted volume 16 to mute the song |
 | 7 | Empty | unused | |
 
-"Start" (~47 B) and "Empty" are exported into `effects.akx`, so they take ROM and SFX RAM. Deleting them in Arkos Tracker keeps numbers 1-5 unchanged; after that, re-export as described below and update the SFX size in `src/platform/music.c` and in the CLAUDE.md memory map.
+"Start" is a rising arpeggio that fades from volume 15 to 1 over 15 steps of 3 frames (45 frames). "Empty" is exported into `effects.akx` but unused, so it takes ROM and SFX RAM. Deleting it in Arkos Tracker (it is the last one) keeps numbers 1-6 unchanged; after that, re-export as described below and update the SFX size in `src/platform/music.c` and in the CLAUDE.md memory map.
 
 ## Lessons learned (do not repeat)
 - **Volume effects stick to a track** until the next volume effect. Every note on a channel needs an explicit volume, or one quiet note makes the following ones quiet. The generator always sets one.
 - **Any note on a channel cuts the previous note on it.** Drums on the bass channel cut the bass sustain. The drums are on the harp channel's off-beat rows, and the bass channel only carries bass.
 - **Noise in an instrument's first cell is audible** as a "tchhh" (that was the bass click). Keep noise out of pitched instruments.
 - **The hardware envelope** (`hardOnly`, `softToHard`) makes the old bass buzzy and very low. There is one envelope for the whole chip, so avoid it.
+- **`AKM_Stop()` also stops the SFX**: once the song is stopped, `AKM_Update()` returns without calling the player. To silence the song while an SFX plays, play an SFX at inverted volume 16 on the other channels: an active SFX owns its channel's PSG registers (`music_play_start_jingle`). `AKM_Play()` clears all SFX channels.
 - Note naming: `A4` = 440 Hz (checked by rendering). Arkos note number = octave*12 + semitone (C=0).
 - Final volumes (track volume + master 3, capped at 15): lead 15, bass 15 (12+3), harp 15 / 13, shaker 11 / 9. The master offset is `MASTER` in the generator. The music sounded quiet against the SFX in game, so it was raised, and there is no headroom left. If it needs to be louder, lower the SFX instead: `sfx_play(sfx, channel, inverted_volume)` takes 0 = loudest, and every call passes 0 today.
 

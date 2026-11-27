@@ -84,7 +84,14 @@ void flow_run(void)
         music_play(MUSIC_TITLE);
         screens_draw_title();
         flow_wait_start();
-        screens_blink_title();
+
+        // Start jingle (45 frames) over the first 3 blink cycles (42 frames),
+        // then silence for the other 7 (98 frames) until the game music. The
+        // stop cuts only the jingle's last, quietest step (volume 1).
+        music_play_start_jingle();
+        screens_blink_title(3);
+        music_stop();
+        screens_blink_title(7);
 
         music_play(MUSIC_GAME);
 

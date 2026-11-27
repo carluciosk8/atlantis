@@ -121,11 +121,10 @@ void screens_draw_title(void)
 }
 
 
-void screens_blink_title(void)
+void screens_blink_title(u8 cycles)
 {
-    // 10 cycles of 7 frames off / 7 frames on (140 vblanks, ~2.33 s at 60 Hz,
-    // 2.8 s at 50 Hz).
-    for (u8 blink = 0; blink < 10; blink++)
+    // `cycles` (> 0) cycles of 7 frames off / 7 frames on.
+    do
     {
         for (u8 frame = 0; frame < 7; frame++)
         {
@@ -139,5 +138,5 @@ void screens_blink_title(void)
             screens_animate_title();
             TILES_PUT_BUFFER_CENTERED(13, title_press_start);
         }
-    }
+    } while (--cycles);
 }

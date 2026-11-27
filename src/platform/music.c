@@ -44,3 +44,29 @@ void sfx_play(u8 sfx, u8 channel, u8 inverted_volume)
     AKM_PlaySFX(sfx, channel, inverted_volume);
     EnableInterrupt();
 }
+
+
+// Silence the song and play the "game starts" jingle (SFX_START, a rising
+// arpeggio that fades out over 45 frames). The jingle plays on channel 0, and
+// the same SFX at inverted volume 16 (volume 0) on channels 1 and 2: while an
+// SFX is active it owns its channel's PSG registers, so the song is muted on
+// all three channels. AKM_Stop() cannot be used instead, because AKM_Update()
+// does nothing once the song is stopped, so the SFX would not play either.
+// The song comes back when the SFX ends, so call music_stop() before frame 45.
+void music_play_start_jingle(void)
+{
+    DisableInterrupt();
+    AKM_PlaySFX(SFX_START, 0, 0);
+    AKM_PlaySFX(SFX_START, 1, 16);
+    AKM_PlaySFX(SFX_START, 2, 16);
+    EnableInterrupt();
+}
+
+
+// Stop the song and any SFX (silences the PSG). music_play() restarts it.
+void music_stop(void)
+{
+    DisableInterrupt();
+    AKM_Stop();
+    EnableInterrupt();
+}
