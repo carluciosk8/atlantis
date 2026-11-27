@@ -8,6 +8,7 @@
 #include "music.h"
 #include "score.h"
 #include "screens.h"
+#include "sky.h"
 #include "sprites.h"
 #include "torpedo.h"
 #include "wave.h"
@@ -43,11 +44,13 @@ static void flow_play_frames(u16 count, u8 what)
 static void flow_play_wave(void)
 {
     wave_start();
+    sky_set(wave_sky);
 
     // Wave banner for ~120 frames (2.0 s at 60 Hz, 2.4 s at 50 Hz).
     screens_draw_wave_banner();
     flow_play_frames(120, PLAY_TORPEDOES);
     screens_clear_wave_banner();
+    sky_refresh();
 
     while (g_wave_size > 0)
     {
@@ -55,6 +58,7 @@ static void flow_play_wave(void)
         Halt();                    // wait for vblank
         sprites_flush();           // SAT flush right after vblank (intentional)
         map_update();
+        sky_update();
         lane_update_all();
         torpedo_update_all();
         collision_handle_torpedoes();

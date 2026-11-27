@@ -1,5 +1,6 @@
 #include "torpedo.h"
 
+#include "frame.h"
 #include "music.h"
 #include "sprites.h"
 
@@ -34,6 +35,10 @@ static const launcher_t torpedo_launchers[3] =
 
 
 torpedo_t torpedoes[2];
+
+// Torpedo colour, cycled every frame between light and dark so the torpedoes
+// stay visible on every sky.
+static const u8 torpedo_colors[4] = { COLOR_WHITE, COLOR_BLACK, COLOR_LIGHT_YELLOW, COLOR_DARK_BLUE };
 
 u8 torpedo_next = 0;        // slot used by the next shot (alternates 0 / 1)
 
@@ -79,6 +84,9 @@ static void torpedo_update(torpedo_t* torpedo)
 
 void torpedo_update_all(void)
 {
+    u8 color = torpedo_colors[g_FrameCounter & 3];
+    torpedoes[0].sprite->Color = color;
+    torpedoes[1].sprite->Color = color;
     torpedo_update(&torpedoes[0]);
     torpedo_update(&torpedoes[1]);
 }

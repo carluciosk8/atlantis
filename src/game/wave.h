@@ -13,6 +13,9 @@ extern i8 g_wave_size;      // gorgons still in play; the wave ends at 0
 #define WAVE_TEXT_SIZE   10
 extern u8 wave_text[WAVE_TEXT_SIZE];
 
+// Sky of the current wave (SKY_DAY, SKY_EVENING, SKY_NIGHT, then day again).
+extern u8 wave_sky;
+
 void wave_init(void);
 void wave_start(void);
 void wave_finish(void);

@@ -5,6 +5,7 @@
 #include "music.h"
 #include "sprite_data.h"
 #include "sprites.h"
+#include "sky.h"       // sky_current, sky_get_border
 #include "tiles.h"     // tiles_set_border
 #include "wave.h"
 
@@ -54,8 +55,17 @@ static void lane_execute_state_waiting(lane_t* lane)
         lane->sprite2->X = lane->sprite1->X;
         lane->sprite1->Pattern = g_gorgon_list[gorgon_id].pattern1;
         lane->sprite2->Pattern = g_gorgon_list[gorgon_id].pattern2;
-        lane->sprite1->Color = g_gorgon_list[gorgon_id].color1;
-        lane->sprite2->Color = g_gorgon_list[gorgon_id].color2;
+        // At night the gorgons are black: they show only in the spotlights.
+        if (sky_current == SKY_NIGHT)
+        {
+            lane->sprite1->Color = COLOR_BLACK;
+            lane->sprite2->Color = COLOR_BLACK;
+        }
+        else
+        {
+            lane->sprite1->Color = g_gorgon_list[gorgon_id].color1;
+            lane->sprite2->Color = g_gorgon_list[gorgon_id].color2;
+        }
 
         lane->state = LANE_STATE_MOVING;
         if (!lane->next) deathray_arm();
@@ -101,7 +111,7 @@ static void lane_execute_state_exploding(lane_t* lane, u8 is_big)
         if (is_big)
         {
             sprites_set_magnification(false);
-            tiles_set_border(COLOR_CYAN);
+            tiles_set_border(sky_get_border());
         }
         lane->state = LANE_STATE_WAITING;
         lane->sprite1->Color = COLOR_TRANSPARENT;

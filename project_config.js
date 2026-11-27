@@ -24,6 +24,7 @@ AddSources =
     `${SourceDir}/game/flow.c`,
     `${SourceDir}/platform/tiles.c`,
     `${SourceDir}/game/city.c`,
+    `${SourceDir}/game/sky.c`,
     `${SourceDir}/ui/hud.c`,
     `${SourceDir}/ui/screens.c`,
     `${SourceDir}/game/wave.c`,
@@ -40,6 +41,7 @@ AddSources =
     `${SourceDir}/platform/music.c`,
     `${SourceDir}/data/sprite_data.c`,
     `${SourceDir}/data/city_data.c`,
+    `${SourceDir}/data/sky_data.c`,
     `${SourceDir}/data/text_data.c`,
 ];
 

@@ -7,6 +7,7 @@
 #include "gorgons.h"
 #include "lane.h"
 #include "score.h"
+#include "sky.h"
 
 
 // Positions of the 3 ASCII digits of the wave number inside wave_text.
@@ -21,12 +22,15 @@ i8 g_wave_size;
 
 u8 wave_text[WAVE_TEXT_SIZE] = { ' ','W','A','V','E',' ','0','0','0',' ' };
 
+u8 wave_sky;
+
 
 void wave_init(void)
 {
     wave_text[WAVE_HUNDREDS] = '0';
     wave_text[WAVE_TENS]     = '0';
     wave_text[WAVE_ONES]     = '1';
+    wave_sky = SKY_DAY;
 }
 
 
@@ -56,6 +60,8 @@ void wave_finish(void)
 
     // Spend the score credits rebuilding the city.
     score_credits = city_rebuild(score_credits);
+
+    if (++wave_sky == SKY_COUNT) wave_sky = SKY_DAY;
 
     // Advance the 3-digit wave number (999 wraps to 001).
     wave_text[WAVE_ONES]++;

@@ -6,18 +6,6 @@
 // City data: const tables only, no code. The installation tables are indexed by
 // the MAP_*_ID values below.
 
-// Plain sky tile (the name-table fill under the city and behind the wave banner).
-#define MAP_TILE_SKY           0x23
-
-// Sky gradient: tile for each of the top 4 name-table rows (light blue fading
-// into the plain sky tile below), and the cloud tiles (the big cloud is 3x2
-// tiles in two rows, the small one is 2x1).
-#define MAP_SKY_GRADIENT_ROWS  4
-extern const u8 map_sky_gradient[MAP_SKY_GRADIENT_ROWS];
-extern const u8 map_cloud_big_top[3];
-extern const u8 map_cloud_big_bottom[3];
-extern const u8 map_cloud_small[2];
-
 // Installation indices for the map_installations_* tables. The acropolis
 // command post stands in the centre; 1..6 run from left to right, and the
 // deathray destroys them from both edges inward.

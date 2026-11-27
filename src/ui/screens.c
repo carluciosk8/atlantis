@@ -2,6 +2,7 @@
 
 #include "city.h"
 #include "frame.h"
+#include "sky.h"
 #include "text_data.h"
 #include "tiles.h"
 #include "wave.h"
@@ -71,7 +72,7 @@ void screens_clear_wave_banner(void)
 {
     // The frame and its interior: 12 x 5 tiles at (10, 4).
     for (u8 row = 4; row < 9; row++)
-        TILES_FILL(10, row, MAP_TILE_SKY, sizeof(wave_text) + 2);
+        TILES_FILL(10, row, sky_rows[sky_current][row], sizeof(wave_text) + 2);
 }
 
 

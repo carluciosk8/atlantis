@@ -3,22 +3,22 @@
 #include "tileset.h"
 
 
-// Offset of the bottom screen third inside the Screen 2 pattern/colour tables.
-#define TILES_BOTTOM_BANK   0x1000
-
-
-// Rewrite the bottom-third colours of the wave tiles with a black sky.
-static void tiles_load_night_waves(void)
+void tiles_replace_color(u8 first, u8 count, u8 bank, u8 from, u8 to)
 {
-    const u8* color = &tileset_Colors[TILES_WAVE_FIRST * 8];
-    u16 dest = g_ScreenColorLow + TILES_BOTTOM_BANK + TILES_WAVE_FIRST * 8;
+    u8 buffer[8];
+    const u8* color = &tileset_Colors[first * 8];
+    u16 dest = g_ScreenColorLow + bank * TILES_BANK_SIZE + first * 8;
 
-    for (u16 i = 0; i < TILES_WAVE_COUNT * 8; i++)
+    for (; count > 0; count--, dest += 8)
     {
-        u8 value = color[i];
-        if ((value & 0xF0) == (COLOR_CYAN << 4)) value = (value & 0x0F) | (COLOR_BLACK << 4);
-        if ((value & 0x0F) == COLOR_CYAN)        value = (value & 0xF0) | COLOR_BLACK;
-        VDP_Poke_16K(value, dest + i);
+        for (u8 i = 0; i < 8; i++, color++)
+        {
+            u8 value = *color;
+            if ((value >> 4) == from)   value = (value & 0x0F) | (to << 4);
+            if ((value & 0x0F) == from) value = (value & 0xF0) | to;
+            buffer[i] = value;
+        }
+        VDP_WriteVRAM_16K(buffer, dest, 8);
     }
 }
 
@@ -28,7 +28,7 @@ void tiles_init(void)
     VDP_EnableDisplay(FALSE);
     VDP_LoadPattern_GM2(tileset_Patterns, TILES_COUNT, 0);
     VDP_LoadColor_GM2(tileset_Colors, TILES_COUNT, 0);
-    tiles_load_night_waves();
+    tiles_replace_color(TILES_WAVE_FIRST, TILES_WAVE_COUNT, TILES_BANK_BOTTOM, COLOR_CYAN, COLOR_BLACK);   // the title's night waves
     VDP_FillScreen_GM2(' ');
     VDP_EnableDisplay(TRUE);
 }
