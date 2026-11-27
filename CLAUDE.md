@@ -55,7 +55,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 
   The other indices hold the font (ASCII positions), the city background and the installations.
 - **Sky colours**: in the game screen, cyan (7) means sky. Any tile with sky pixels that is shown in rows 0..15 must be listed in `sky_recolour` (`sky_data.c`), or it keeps a cyan patch in the evening and at night. The night spotlight frames (`sky_beam_sky`, 3 × 32×12 tiles, stars included) are plain tables: edit them directly when a beam or a star moves.
-- **Sound**: the Arkos AKM player (`arkos/akm_player`). The song and SFX data are position-dependent and are copied from ROM to fixed RAM addresses at boot (`src/platform/music.c`). Sub-songs are 0 = game, 1 = title, 2 = game over, 3 = hi-score. SFX numbers start at 1 (`ARKOS_SFX_START_IDX=1`).
+- **Sound**: the Arkos AKM player (`arkos/akm_player`). The song and SFX data are position-dependent and are copied from ROM to fixed RAM addresses at boot (`src/platform/music.c`). Sub-songs are 0 = game, 1 = title, 2 = game over, 3 = hi-score. SFX numbers start at 1 (`ARKOS_SFX_START_IDX=1`). How to build, export and audition the song and SFX, the sub-song and SFX tables, and the lessons learned are in `docs/music.md`.
 - **Memory map** (nothing may overlap):
 
   | Region | Address |
