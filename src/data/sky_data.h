@@ -54,12 +54,12 @@ extern const u8 sky_beam_row12[SKY_BEAM_LAYOUTS][2];
 extern const u8 sky_beam_order[SKY_BEAM_STEPS];   // layout of each sweep step
 
 // Night pool tiles, loaded at night into the top and middle pattern banks: the
-// first SKY_BEAM_SLOTS_LOW_COUNT at 0x60 (the beam tiles of tiles.png,
-// overwritten), the rest at 0xD5 (unloaded slots and the cloud and bird slots,
-// unused at night). Nothing else draws these slots in rows 0..15. The beam
-// tiles are light yellow on black; the last SKY_BEAM_STAR_TILES are the dim
-// stars, coloured by sky_beam_star_colors. The moon (0x06, 0x0A, 0x0E, 0x19)
-// and the bright stars are in tiles.png.
+// first SKY_BEAM_SLOTS_LOW_COUNT at 0x60 (blank in tiles.png), the rest at 0xD5
+// (unloaded slots and the cloud and bird slots, unused at night). Nothing else
+// draws these slots in rows 0..15. The beam tiles are light yellow on black;
+// the last SKY_BEAM_STAR_TILES are the dim stars, coloured by
+// sky_beam_star_colors. The moon (0x06, 0x0A, 0x0E, 0x19) and the bright stars
+// are in tiles.png.
 #define SKY_BEAM_TILES         66
 #define SKY_BEAM_STAR_TILES    2
 #define SKY_BEAM_SLOTS_LOW     0x60

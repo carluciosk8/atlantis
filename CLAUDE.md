@@ -42,7 +42,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
   |---|---|
   | 0x00–0x1C | title logo |
   | 0x23 | plain sky (cyan; recoloured per sky, black at night) |
-  | 0x60–0x76 | night beam pool: overwritten at night in the top and middle banks by `sky_beam_tiles`. The hand-drawn beams in `tiles.png` are no longer shown |
+  | 0x60–0x76 | night beam pool: overwritten at night in the top and middle banks by `sky_beam_tiles`; blank (magenta) in `tiles.png`, keep them so |
   | 0x8C–0x8F | day sky gradient |
   | 0x90–0x97 | evening cloud streaks |
   | 0x98–0x9A | stars (title and night) |

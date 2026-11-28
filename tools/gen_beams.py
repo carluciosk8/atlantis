@@ -43,7 +43,7 @@ DIM_STARS = [(0, 4), (0, 9), (0, 12), (1, 22), (1, 24), (1, 30), (2, 5), (2, 10)
              (5, 12), (5, 31), (7, 6), (7, 10), (7, 17), (7, 31), (8, 0), (8, 4), (8, 14),
              (8, 21), (10, 4), (10, 14), (10, 26), (11, 7), (11, 10), (11, 23)]
 
-# Pool slots: 23 from 0x60 (the old beam tiles), then 43 from 0xD5 (free at
+# Pool slots: 23 from 0x60 (blank in tiles.png), then 43 from 0xD5 (free at
 # night: the cloud and bird slots and the unloaded tiles).
 SLOTS = [0x60 + i for i in range(23)] + [0xD5 + i for i in range(43)]
 
