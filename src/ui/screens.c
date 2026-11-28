@@ -1,9 +1,11 @@
 #include "screens.h"
 
 #include "city.h"
+#include "flyby.h"
 #include "frame.h"
 #include "logo_data.h"
 #include "sky.h"
+#include "sprites.h"
 #include "text_data.h"
 #include "tiles.h"
 #include "wave.h"
@@ -120,6 +122,9 @@ static u8 title_anim_frame;
 
 void screens_animate_title(void)
 {
+    sprites_flush();           // SAT flush right after vblank, as in game
+    flyby_update();
+
     // Same timing as in game: one frame every 4 vblanks.
     u8 wave_frame = (u8)(g_FrameCounter >> 2) & (MAP_WATER_FRAMES - 1);
     if (wave_frame == title_anim_frame) return;
@@ -155,6 +160,7 @@ void screens_draw_title(void)
         VDP_Poke_GM2(star[0], star[1], star[2]);
     TILES_PUT_BUFFER(0, TITLE_SEABED_ROW, title_seabed, sizeof(title_seabed));
     title_anim_frame = 0xFF;
+    flyby_init();
     screens_animate_title();
     VDP_EnableDisplay(TRUE);
 }

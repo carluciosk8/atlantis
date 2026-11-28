@@ -27,6 +27,7 @@ AddSources =
     `${SourceDir}/game/sky.c`,
     `${SourceDir}/ui/hud.c`,
     `${SourceDir}/ui/screens.c`,
+    `${SourceDir}/ui/flyby.c`,
     `${SourceDir}/game/wave.c`,
     `${SourceDir}/game/score.c`,
     `${SourceDir}/platform/sprites.c`,

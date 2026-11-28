@@ -14,6 +14,8 @@ Gorgon ships attack Atlantis in waves. Defend the city's installations by shooti
 
 Press P or F1 during a wave to pause the game, and again to resume.
 
+Now and then gorgons fly across the title screen.
+
 The game cycles through the title screen, the waves, game over and the hi-score screen. The sky changes with each wave: day with drifting clouds, evening with a setting sun and birds, then night, when the gorgons are black and can only be seen in the sweeping spotlights.
 
 ## Building
@@ -46,7 +48,7 @@ Run the ROM in an MSX1 emulator such as [openMSX](https://openmsx.org/) or [blue
 | `atlantis.c` | `main()`: boot, then `flow_run()` |
 | `src/platform/` | Frame hook, tiles, sprites and music: the layer that talks to the VDP, BIOS and Arkos |
 | `src/game/` | Game logic: flow, waves, lanes, torpedoes, collisions, deathray, city, sky, score and controls |
-| `src/ui/` | The HUD row and the title, wave, game-over and hi-score screens |
+| `src/ui/` | The HUD row, the title, wave, game-over and hi-score screens, and the title's gorgons |
 | `src/data/` | Const data tables (sprite patterns, city map, sky layouts and art, screen text) and the generated title logo, tileset, song and sound-effect files |
 | `assets/gfx/` | Tileset and title logo source images |
 | `assets/sfx/` | Arkos Tracker 2 song and sound effects (`.aks` sources, `.akm`/`.akx` exports) |

@@ -109,6 +109,8 @@ void flow_run(void)
         screens_blink_title(3);
         music_stop();
         screens_blink_title(7);
+        sprites_hide_all();        // the title gorgons
+        sprites_flush();
 
         music_play(MUSIC_GAME);
 
