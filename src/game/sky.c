@@ -168,7 +168,7 @@ void sky_draw(u8 sky)
 {
     sky_current = sky;
 
-    // Sky pixels inside the city, waves and plaque frame.
+    // Sky pixels inside the city and the waves.
     u8 top = sky_cyan[sky][0];
     u8 middle = sky_cyan[sky][1];
     const u8* range = sky_recolour[0];

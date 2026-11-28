@@ -11,7 +11,8 @@
 #include "wave.h"
 
 
-// Gold plaque frame tiles (one tile thick, rounded outer corners).
+// Plaque frame tiles, one tile thick: a grey double line on black with a Greek
+// key in each corner. They have no sky pixels, so they suit any background.
 #define FRAME_TILE_TL   0x9B
 #define FRAME_TILE_T    0x9C
 #define FRAME_TILE_TR   0x9D

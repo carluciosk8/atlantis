@@ -6,10 +6,10 @@
 
 
 // The sky (name-table rows 0..11) changes with the wave: day, evening, night.
-// Each sky recolours the tiles with sky pixels (buildings, launchers, waves,
-// plaque frame corners), draws its rows and decorations, and animates its
-// clouds or birds in reserved tile slots, or (at night) sweeps the spotlights,
-// where the black gorgons can be seen.
+// Each sky recolours the tiles with sky pixels (buildings, launchers, waves),
+// draws its rows and decorations, and animates its clouds or birds in reserved
+// tile slots, or (at night) sweeps the spotlights, where the black gorgons can
+// be seen.
 
 extern u8 sky_current;     // SKY_*
 

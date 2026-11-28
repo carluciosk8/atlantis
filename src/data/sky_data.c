@@ -28,7 +28,7 @@ const u8 sky_recolour[SKY_RECOLOUR_COUNT][2] =
     { 0x3A, 4 },    // shoreline corners
     { 0x77, 6 },    // torpedo launchers and acropolis
     { 0x84, 2 },    // air generator
-    { 0x9B, 42 },   // plaque frame, HUD ornaments and waves (0x9B..0xC4)
+    { 0x9B, 42 },   // waves (the frame and HUD ornaments before them have no sky pixels)
 };
 
 const u8 sky_evening_strips[SKY_EVENING_STRIPS][4] =
