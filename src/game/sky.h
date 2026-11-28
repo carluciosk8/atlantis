@@ -15,6 +15,9 @@ extern u8 sky_current;     // SKY_*
 
 #define sky_get_border()   (sky_border[sky_current])
 
+// Screen thirds with stars in game.
+#define SKY_STAR_BANKS     2
+
 // Draw `sky` with the display as it is (map_init calls it with the display off).
 void sky_draw(u8 sky);
 
@@ -29,6 +32,7 @@ void sky_refresh(void);
 // next step of each object rewrites its name-table cells.
 void sky_update(void);
 
-// Give the bright star tiles their own colours back (the title uses them after
-// a night wave may have left them mid-twinkle).
-void sky_reset_stars(void);
+// Colour the bright star tiles with twinkle phase `phase` (sky_twinkle) in the
+// first `banks` screen thirds, from the top. In game the stars are in the top and
+// middle thirds (SKY_STAR_BANKS); the title screen has stars in all three.
+void sky_set_star_colors(u8 phase, u8 banks);

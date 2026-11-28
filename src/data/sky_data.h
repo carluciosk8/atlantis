@@ -71,7 +71,7 @@ extern const u8 sky_beam_tiles[SKY_BEAM_TILES*8];
 extern const u8 sky_beam_star_colors[SKY_BEAM_STAR_TILES*8];
 
 // Night star twinkle: the colour (foreground on black) of each bright star tile
-// (0x98..0x9A), cycled every SKY_TWINKLE_FRAMES in the top and middle banks.
+// (0x98..0x9A), cycled every SKY_TWINKLE_FRAMES (in game and on the title).
 #define SKY_STAR_FIRST         0x98
 #define SKY_STAR_COUNT         3
 #define SKY_TWINKLE_FRAMES     8

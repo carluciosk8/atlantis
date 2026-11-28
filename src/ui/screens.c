@@ -133,6 +133,11 @@ void screens_animate_title(void)
     u8 generator = map_generator_aqua[0] + (wave_frame & 3);
     VDP_Poke_GM2(TITLE_GENERATOR1_X, TITLE_GENERATOR_ROW, generator);
     VDP_Poke_GM2(TITLE_GENERATOR2_X, TITLE_GENERATOR_ROW, generator);
+
+    // The stars twinkle as in the night sky: a new phase every 2 wave frames
+    // (SKY_TWINKLE_FRAMES = 8 vblanks). The forced redraw also restores the
+    // colours a night wave may have left mid-twinkle.
+    sky_set_star_colors((wave_frame >> 1) & (SKY_TWINKLE_PHASES - 1), 3);
 }
 
 

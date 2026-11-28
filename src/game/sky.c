@@ -69,8 +69,7 @@ static void sky_load_beam_tiles(void)
 }
 
 
-// Colour the bright star tiles with twinkle phase `phase` (top and middle banks).
-static void sky_set_star_colors(u8 phase)
+void sky_set_star_colors(u8 phase, u8 banks)
 {
     u8 buffer[SKY_STAR_COUNT * 8];
     const u8* colors = sky_twinkle[phase];
@@ -78,14 +77,9 @@ static void sky_set_star_colors(u8 phase)
     for (u8 k = SKY_STAR_COUNT; k > 0; k--, colors++)
         for (u8 i = 8; i > 0; i--)
             *out++ = *colors;
-    VDP_WriteVRAM_16K(buffer, g_ScreenColorLow + TILES_BANK_TOP * TILES_BANK_SIZE + SKY_STAR_FIRST * 8, sizeof(buffer));
-    VDP_WriteVRAM_16K(buffer, g_ScreenColorLow + TILES_BANK_MIDDLE * TILES_BANK_SIZE + SKY_STAR_FIRST * 8, sizeof(buffer));
-}
-
-
-void sky_reset_stars(void)
-{
-    sky_set_star_colors(0);
+    u16 dest = g_ScreenColorLow + SKY_STAR_FIRST * 8;
+    for (; banks > 0; banks--, dest += TILES_BANK_SIZE)
+        VDP_WriteVRAM_16K(buffer, dest, sizeof(buffer));
 }
 
 
@@ -200,7 +194,7 @@ void sky_draw(u8 sky)
     sky_beam_timer = SKY_BEAM_FRAMES;
     sky_twinkle_phase = 0;
     sky_twinkle_timer = SKY_TWINKLE_FRAMES;
-    sky_set_star_colors(0);
+    sky_set_star_colors(0, SKY_STAR_BANKS);
     if (sky == SKY_NIGHT)
     {
         sky_load_beam_tiles();
@@ -263,7 +257,7 @@ void sky_update(void)
     {
         sky_twinkle_timer = SKY_TWINKLE_FRAMES;
         sky_twinkle_phase = (sky_twinkle_phase + 1) & (SKY_TWINKLE_PHASES - 1);
-        sky_set_star_colors(sky_twinkle_phase);
+        sky_set_star_colors(sky_twinkle_phase, SKY_STAR_BANKS);
     }
 
 
