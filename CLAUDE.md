@@ -26,7 +26,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 - `atlantis.c` holds `main()` only. Boot sets Screen 2, loads tiles and sprites, turns off the key click, starts the music, calls `frame_install_hook()`, then `flow_run()`.
 - `frame.c` owns `volatile u8 g_FrameCounter` and `MusicFrameHook`, a `__naked` `H_TIMI` hook. The hook increments the counter and calls `AKM_Update`. It wraps that work in `push af`/`pop af` because the BIOS needs A (a copy of VDP status S#0) preserved. It must not touch the VDP.
 - `flow.c` runs title → waves → game over → hi-score, forever. Each in-wave frame does `controls_update` → `Halt()` (wait for vblank) → `sprites_flush` → map/lane/torpedo updates → collisions. P or F1 (`controls_pause_pushed`) pauses an in-wave frame loop (not the banners or other screens) in `flow_pause`: nothing updates, `music_stop`/`music_resume` mute and continue the player, `music_play_pause_chime` writes a short chime straight to the PSG in between (each toggle blocks for 22 frames), and a PAUSED plaque takes the wave banner's place, then `screens_clear_banner` and `sky_refresh` restore the sky. The non-interactive loops (wave banner, game over, hi-score) all go through `flow_play_frames(count, what)`.
-- Source layout: `src/platform/` (frame, tiles, sprites, music: the layer that talks to VDP, BIOS and Arkos), `src/game/` (flow, wave, difficulty, lane, queue, gorgons, torpedo, deathray, collision, controls, city, sky, score), `src/ui/` (hud, screens) and `src/data/` (const tables only, no code: `sprite_data`, `city_data`, `sky_data`, `text_data`, plus the generated `tileset.h`, `song.h`, `effects.h`). Declare each table in its header with an explicit size (`extern const u8 x[32];`) so a wrong initialiser length fails the build and `sizeof` works in other files. `controls.c` lives in `game/` for now: it reads game state (`map_have_installation`, `torpedoes[]`), so it does not fit `platform/` until the keyboard read is split from the firing logic.
+- Source layout: `src/platform/` (frame, tiles, sprites, music: the layer that talks to VDP, BIOS and Arkos), `src/game/` (flow, wave, difficulty, lane, queue, gorgons, torpedo, deathray, collision, controls, city, sky, score), `src/ui/` (hud, screens) and `src/data/` (const tables only, no code: `sprite_data`, `city_data`, `sky_data`, `text_data`, the generated `logo_data`, plus the generated `tileset.h`, `song.h`, `effects.h`). Declare each table in its header with an explicit size (`extern const u8 x[32];`) so a wrong initialiser length fails the build and `sizeof` works in other files. `controls.c` lives in `game/` for now: it reads game state (`map_have_installation`, `torpedoes[]`), so it does not fit `platform/` until the keyboard read is split from the firing logic.
 - Game modules:
   - **wave / difficulty**: `wave_start` seeds the RNG with `g_FrameCounter`, builds the gorgon list for the wave with its velocities, and pushes every gorgon into lane 0's queue.
   - **lane**: four lanes, each a state machine (waiting / moving / exploding). A gorgon that leaves the screen is passed to `lane->next` through its `queue_t`. In the last lane (`next == 0`) the gorgon attacks with the deathray. `g_wave_size` counts down as gorgons finish, and the wave ends when it reaches 0.
@@ -40,7 +40,7 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 
   | Tiles | Use |
   |---|---|
-  | 0x00–0x1C | title logo |
+  | 0x00–0x05, 0x07–0x09, 0x0B–0x0D, 0x0F–0x18, 0x1A–0x1C | blank (magenta) in `tiles.png`. The title loads its logo over them in the top bank, so a tile placed here would show correctly only in rows 8..23 |
   | 0x23 | plain sky (cyan; recoloured per sky, black at night) |
   | 0x60–0x76 | night beam pool: overwritten at night in the top and middle banks by `sky_beam_tiles`; blank (magenta) in `tiles.png`, keep them so |
   | 0x8C–0x8F | day sky gradient |
@@ -51,10 +51,11 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
   | 0xC5–0xCC | evening sky bands; 0xCD–0xD4 setting sun (the last loaded tile, `TILES_COUNT` = 213) |
   | 0xD5–0xDF, 0xF9–0xFF | not loaded; night beam pool (top and middle banks) |
   | 0x06, 0x0A, 0x0E, 0x19 | night crescent moon (top-left, top-right, bottom-left, bottom-right), light yellow on black |
-  | 0x7F | free: loaded but never drawn (a leftover). Reuse it before growing `TILES_COUNT`; no unloaded slot is free any more |
+  | 0x7F | free: loaded but never drawn (a leftover). Reuse it (or, for tiles drawn only in rows 8..23, a blank slot of 0x00–0x1C) before growing `TILES_COUNT`; no unloaded slot is free any more |
   | 0xE0–0xF8 | reserved: patterns written at run time by `sky.c` (day clouds, evening birds; part of the night beam pool); keep them blank in `tiles.png` |
 
   The other indices hold the font (ASCII positions), the city background and the installations.
+- **Title logo**: its own artwork, `assets/gfx/logo.png` (192×56, drawn at tile (4, 1)). `tools/gen_logo.py` cuts it into unique tiles and writes `src/data/logo_data.c`/`.h`; `screens_draw_logo` loads them into the top bank (now 85 tiles in 0x00–0x1C, 0x60–0x76 and 0xD5–0xF5) on every title draw, because the sky code overwrites some of those slots. A top-bank slot may be added to the logo's `SLOT_RANGES` only if no game screen shows it in rows 0..7, or the sky code reloads it before showing it. `title_stars` are written after the logo, so a star must not sit on a logo cell.
 - **Sky colours**: in the game screen, cyan (7) means sky. Any tile with sky pixels that is shown in rows 0..15 must be listed in `sky_recolour` (`sky_data.c`), or it keeps a cyan patch in the evening and at night. The night spotlight frames (`sky_beam_sky`, 4 × 32×12 tiles, stars included), `sky_beam_row12` and `sky_beam_tiles` are generated by `tools/gen_beams.py` (the beam wedges, pivots, moon, bright and dim star positions are at its top): run `python3 -I tools/gen_beams.py` and paste its output over the marked block in `sky_data.c`. Do not edit the tables by hand.
 - **Sound**: the Arkos AKM player (`arkos/akm_player`). The song and SFX data are position-dependent and are copied from ROM to fixed RAM addresses at boot (`src/platform/music.c`). Sub-songs are 0 = game, 1 = title, 2 = game over, 3 = hi-score. SFX numbers start at 1 (`ARKOS_SFX_START_IDX=1`). How to build, export and audition the song and SFX, the sub-song and SFX tables, and the lessons learned are in `docs/music.md`.
 - **Memory map** (nothing may overlap):
@@ -77,7 +78,9 @@ A clone of the game Atlantis for MSX1, written in C (SDCC, Z80) on the MSXgl lib
 - `MSXbin assets/sfx/song.akm -t g_SongData -ad -o song.h`
 - `MSXbin assets/sfx/effects.akx -t g_SFXData -ad -o effects.h`
 
-The `.akm` and `.akx` files were exported from Arkos Tracker 2 with "Encode to address" set to 0xD000 and 0xE000. If the song data must move, the developer has to re-export it from the Arkos Tracker GUI. Give the developer the format and the address to use, and wait for the new export. The original assets (`tiles.png`, `song.aks`, `effects.aks`) are the source of truth: never overwrite or delete them. The one exception is `tiles.png`, which is edited in place for graphics changes the developer asked for.
+`src/data/logo_data.c` and `logo_data.h` are written by `python3 -I tools/gen_logo.py` (run from the repository root, needs Pillow) from `assets/gfx/logo.png`, painted with the same MSX1 palette and at most 2 colours per 8×1 tile row. Do not edit them by hand.
+
+The `.akm` and `.akx` files were exported from Arkos Tracker 2 with "Encode to address" set to 0xD000 and 0xE000. If the song data must move, the developer has to re-export it from the Arkos Tracker GUI. Give the developer the format and the address to use, and wait for the new export. The original assets (`tiles.png`, `logo.png`, `song.aks`, `effects.aks`) are the source of truth: never overwrite or delete them. The exceptions are `tiles.png` and `logo.png`, which are edited in place for graphics changes the developer asked for.
 
 ## Reference material (read-only, shared with other projects; never edit)
 

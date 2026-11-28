@@ -42,6 +42,7 @@ AddSources =
     `${SourceDir}/data/sprite_data.c`,
     `${SourceDir}/data/city_data.c`,
     `${SourceDir}/data/sky_data.c`,
+    `${SourceDir}/data/logo_data.c`,
     `${SourceDir}/data/text_data.c`,
 ];
 

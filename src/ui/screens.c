@@ -2,6 +2,7 @@
 
 #include "city.h"
 #include "frame.h"
+#include "logo_data.h"
 #include "sky.h"
 #include "text_data.h"
 #include "tiles.h"
@@ -89,6 +90,30 @@ void screens_clear_banner(void)
 }
 
 
+// Load the logo tiles into the top pattern and colour banks and write the logo
+// cells. The sky code overwrites some of these slots in game, so every title
+// draw loads them again. Called with the display off.
+static void screens_draw_logo(void)
+{
+    const u8* patterns = logo_patterns;
+    const u8* colors = logo_colors;
+    const u8* range = logo_slots[0];
+    for (u8 i = LOGO_SLOT_RANGES; i > 0; i--, range += 2)
+    {
+        u16 offset = range[0] * 8;
+        u16 size = range[1] * 8;
+        VDP_WriteVRAM_16K(patterns, g_ScreenPatternLow + TILES_BANK_TOP * TILES_BANK_SIZE + offset, size);
+        VDP_WriteVRAM_16K(colors, g_ScreenColorLow + TILES_BANK_TOP * TILES_BANK_SIZE + offset, size);
+        patterns += size;
+        colors += size;
+    }
+
+    const u8* names = logo_names;
+    for (u8 row = LOGO_Y; row < LOGO_Y + LOGO_H; row++, names += LOGO_W)
+        TILES_PUT_BUFFER(LOGO_X, row, names, LOGO_W);
+}
+
+
 // Last title animation frame written to VRAM (0xFF forces a redraw).
 static u8 title_anim_frame;
 
@@ -117,11 +142,7 @@ void screens_draw_title(void)
     VDP_SetColor2(COLOR_BLACK, COLOR_BLACK);   // border; the text colour is unused in Screen 2
     VDP_FillScreen_GM2(' ');
 
-    TILES_PUT_BUFFER(10, 4, title_logo_row1, 2);
-    TILES_PUT_BUFFER(25, 4, title_logo_row1, 2);
-    TILES_PUT_BUFFER( 5, 5, title_logo_row2, 23);
-    TILES_PUT_BUFFER( 4, 6, title_logo_row3, 24);
-    TILES_PUT_BUFFER( 4, 7, title_logo_row4, 24);
+    screens_draw_logo();
     TILES_PUT_BUFFER_CENTERED(13, title_press_start);
     TILES_PUT_BUFFER_CENTERED(16, title_copyright);
     const u8* star = title_stars[0];

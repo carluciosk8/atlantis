@@ -3,14 +3,9 @@
 #include "msxgl.h"
 
 
-// Fixed screen text and the title logo: const tables only, no code. Text is kept
-// as brace lists of characters, so it lives in ROM and is never built on the stack.
-
-// Title logo, tileset tile indices, one array per row (drawn by ui/screens.c).
-extern const u8 title_logo_row1[2];
-extern const u8 title_logo_row2[23];
-extern const u8 title_logo_row3[24];
-extern const u8 title_logo_row4[24];
+// Fixed screen text and the title backdrop: const tables only, no code. Text is
+// kept as brace lists of characters, so it lives in ROM and is never built on the
+// stack.
 
 // Title backdrop: stars on the black sky ({ x, y, tile } name-table cells),
 // the animated waves at name-table row 19 and the 3-row seabed strip below them,
