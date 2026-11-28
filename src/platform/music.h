@@ -27,3 +27,5 @@ void music_play(u8 song);
 void sfx_play(u8 sfx, u8 channel, u8 inverted_volume);
 void music_play_start_jingle(void);
 void music_stop(void);
+void music_resume(void);
+void music_play_pause_chime(bool rising);

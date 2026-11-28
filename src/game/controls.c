@@ -14,6 +14,9 @@
 // Fire-button state of the previous frame (fires on the rising edge only).
 static u8 last_trigger = 0;
 
+// Pause-key state of the previous frame (toggles on the rising edge only).
+static u8 last_pause = 0;
+
 
 // Read the keyboard as a joystick and invert once, so the result is
 // active-high: bit 0 = Up, bit 1 = Down, bit 2 = Left, bit 3 = Right,
@@ -51,6 +54,22 @@ void controls_update(void)
         torpedo_fire(torpedo_next ? TORPEDO_LAUNCHER_RIGHT : TORPEDO_LAUNCHER_LEFT);
     }
 #endif
+}
+
+
+// True on the frame P or F1 goes down; call it once per frame. The rows are
+// read with interrupts off, as in read_controller().
+bool controls_pause_pushed(void)
+{
+    DisableInterrupt();
+    u8 row_p  = Keyboard_Read(KEY_ROW(KEY_P));
+    u8 row_f1 = Keyboard_Read(KEY_ROW(KEY_F1));
+    EnableInterrupt();
+
+    u8 pause = IS_KEY_PRESSED(row_p, KEY_P) || IS_KEY_PRESSED(row_f1, KEY_F1);
+    bool pushed = pause && !last_pause;
+    last_pause = pause;
+    return pushed;
 }
 
 

@@ -36,6 +36,9 @@ The other instruments (1-8 from the original song, and 14 Soft Tom) are not used
 
 "Start" is a rising arpeggio that fades from volume 15 to 1 over 15 steps of 3 frames (45 frames). "Empty" is exported into `effects.akx` but unused, so it takes ROM and SFX RAM. Deleting it in Arkos Tracker (it is the last one) keeps numbers 1-6 unchanged; after that, re-export as described below and update the SFX size in `src/platform/music.c` and in the CLAUDE.md memory map.
 
+## Pause chime
+Not in `effects.aks`: `music_play_pause_chime` (`src/platform/music.c`) writes it straight to PSG channel A while the player is stopped, so the paused song and SFX do not advance. D6, A5, D5 on pause and the reverse on resume; 5, 5 and 12 frames, each note starting at volume 13 and fading by 1 per frame. The notes and timing are the `CHIME_*` constants.
+
 ## Lessons learned (do not repeat)
 - **Volume effects stick to a track** until the next volume effect. Every note on a channel needs an explicit volume, or one quiet note makes the following ones quiet. The generator always sets one.
 - **Any note on a channel cuts the previous note on it.** Drums on the bass channel cut the bass sustain. The drums are on the harp channel's off-beat rows, and the bass channel only carries bass.

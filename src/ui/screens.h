@@ -11,7 +11,8 @@ void screens_animate_title(void);       // waves and generators; call every fram
 void screens_blink_title(u8 cycles);   // blink "HIT TRIGGER TO START" (14 frames per cycle)
 
 void screens_draw_wave_banner(void);    // " WAVE nnn " from wave_text
-void screens_clear_wave_banner(void);   // restore the sky behind it
+void screens_draw_pause_banner(void);   // "  PAUSED  ", same place and size
+void screens_clear_banner(void);        // restore the sky behind either banner
 
 void screens_draw_game_over(void);
 void screens_draw_hi_score(void);

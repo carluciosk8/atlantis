@@ -12,6 +12,8 @@ Gorgon ships attack Atlantis in waves. Defend the city's installations by shooti
 - Each installation still standing at the end of a wave is worth 5 points.
 - Every time the score crosses a multiple of 100 you earn a bonus installation. The score saturates at 999999.
 
+Press P or F1 during a wave to pause the game, and again to resume.
+
 The game cycles through the title screen, the waves, game over and the hi-score screen. The sky changes with each wave: day with drifting clouds, evening with a setting sun and birds, then night, when the gorgons are black and can only be seen in the sweeping spotlights.
 
 ## Building

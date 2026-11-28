@@ -59,16 +59,29 @@ void screens_draw_game_over(void)
 }
 
 
-void screens_draw_wave_banner(void)
+// A 12 x 5 plaque at (10, 4) with one line of WAVE_TEXT_SIZE characters.
+static void screens_draw_banner(const u8* text)
 {
     screens_draw_frame(10, 4, 12, 5);
-    TILES_FILL(11, 5, ' ', sizeof(wave_text));
-    TILES_PUT_BUFFER(11, 6, wave_text, sizeof(wave_text));
-    TILES_FILL(11, 7, ' ', sizeof(wave_text));
+    TILES_FILL(11, 5, ' ', WAVE_TEXT_SIZE);
+    TILES_PUT_BUFFER(11, 6, text, WAVE_TEXT_SIZE);
+    TILES_FILL(11, 7, ' ', WAVE_TEXT_SIZE);
 }
 
 
-void screens_clear_wave_banner(void)
+void screens_draw_wave_banner(void)
+{
+    screens_draw_banner(wave_text);
+}
+
+
+void screens_draw_pause_banner(void)
+{
+    screens_draw_banner(text_pause);
+}
+
+
+void screens_clear_banner(void)
 {
     // The frame and its interior: 12 x 5 tiles at (10, 4).
     for (u8 row = 4; row < 9; row++)

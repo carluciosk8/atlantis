@@ -36,3 +36,6 @@ extern const u8 text_hi_score_3[19];
 
 // Game-over screen.
 extern const u8 text_game_over[11];
+
+// Pause banner (same width as the wave banner).
+extern const u8 text_pause[10];

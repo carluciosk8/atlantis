@@ -1,6 +1,8 @@
 #include "music.h"
 
 #include "arkos/akm_player.h"
+#include "psg_reg.h"       // PSG_REG_*
+#include "system_port.h"   // g_PSG_RegPort, g_PSG_DataPort
 
 #include "song.h"     // const u8 g_SongData[] (1811 B, exported for 0xD000)
 #include "effects.h"  // const u8 g_SFXData[]  ( 283 B, exported for 0xE000)
@@ -12,6 +14,17 @@
 // nothing else may overlap these regions.
 #define SONG_ADDR 0xD000   // song: 1811 B -> 0xD000..0xD713
 #define SFX_ADDR  0xE000   // SFX:   283 B -> 0xE000..0xE11B
+
+
+// Pause chime: tone periods of D6, A5 and D5 (played in this order on pause,
+// reversed on resume).
+#define CHIME_NOTES        3
+#define CHIME_FRAMES       5      // per note
+#define CHIME_LAST_FRAMES  12     // the last note rings longer
+#define CHIME_VOLUME       13     // start of each note, then -1 per frame
+#define CHIME_MIXER        0xBE   // tone A only; bits 7-6 keep the MSX port directions
+
+static const u8 chime_periods[CHIME_NOTES] = { 95, 127, 190 };
 
 
 // Copy the song and SFX to their fixed addresses, initialise the SFX bank and
@@ -63,10 +76,52 @@ void music_play_start_jingle(void)
 }
 
 
-// Stop the song and any SFX (silences the PSG). music_play() restarts it.
+// Stop the song and any SFX (silences the PSG). music_play() restarts the
+// song, and music_resume() continues from where it stopped.
 void music_stop(void)
 {
     DisableInterrupt();
     AKM_Stop();
     EnableInterrupt();
+}
+
+
+// Continue the song and any SFX after music_stop(). AKM_Stop() only mutes the
+// PSG and keeps the player state, and the next AKM_Update() rewrites the PSG
+// registers. A single byte write, so no interrupt protection is needed.
+void music_resume(void)
+{
+    g_AKM_Playing = TRUE;
+}
+
+
+// Write a PSG register. The two port writes must not be split by an interrupt.
+static void music_write_psg(u8 reg, u8 value)
+{
+    DisableInterrupt();
+    g_PSG_RegPort = reg;
+    g_PSG_DataPort = value;
+    EnableInterrupt();
+}
+
+
+// Play the pause chime on channel A, falling (rising = FALSE) or rising, and
+// return when it ends (22 frames). It writes the PSG directly, so call it only
+// between music_stop() and music_resume(): an Arkos SFX cannot be used, because
+// AKM_Update() would have to run, and that would advance the paused song.
+void music_play_pause_chime(bool rising)
+{
+    music_write_psg(PSG_REG_MIXER, CHIME_MIXER);
+    music_write_psg(PSG_REG_TONEC_A, 0);
+    for (u8 i = 0; i < CHIME_NOTES; i++)
+    {
+        music_write_psg(PSG_REG_TONEF_A, chime_periods[rising ? CHIME_NOTES - 1 - i : i]);
+        u8 volume = CHIME_VOLUME;
+        for (u8 frames = (i == CHIME_NOTES - 1) ? CHIME_LAST_FRAMES : CHIME_FRAMES; frames > 0; frames--)
+        {
+            music_write_psg(PSG_REG_AMP_A, volume--);
+            Halt();
+        }
+    }
+    music_write_psg(PSG_REG_AMP_A, 0);
 }

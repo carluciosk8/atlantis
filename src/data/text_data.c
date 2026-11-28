@@ -62,3 +62,5 @@ const u8 text_hi_score_2[] = { ' ',' ','Y','O','U',' ','C','O','N','Q','U','E','
 const u8 text_hi_score_3[] = { ' ',' ',' ',' ','H','I',' ','S','C','O','R','E',' ','.','.','.',' ',' ',' ' };
 // Game-over screen.
 const u8 text_game_over[] = { ' ','G','A','M','E',' ','O','V','E','R',' ' };
+// Pause banner.
+const u8 text_pause[] = { ' ',' ','P','A','U','S','E','D',' ',' ' };

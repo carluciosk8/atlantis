@@ -40,6 +40,22 @@ static void flow_play_frames(u16 count, u8 what)
 }
 
 
+// Freeze the wave until the pause key is pressed again: nothing moves, the
+// music is muted, and a plaque covers the middle of the sky. A chime marks both
+// toggles; the wave restarts when the second one ends.
+static void flow_pause(void)
+{
+    music_stop();
+    screens_draw_pause_banner();
+    music_play_pause_chime(FALSE);
+    do Halt(); while (!controls_pause_pushed());
+    music_play_pause_chime(TRUE);
+    screens_clear_banner();
+    sky_refresh();
+    music_resume();
+}
+
+
 // Play one wave: until every gorgon has been shot down or has finished its run.
 static void flow_play_wave(void)
 {
@@ -49,11 +65,12 @@ static void flow_play_wave(void)
     // Wave banner for ~120 frames (2.0 s at 60 Hz, 2.4 s at 50 Hz).
     screens_draw_wave_banner();
     flow_play_frames(120, PLAY_TORPEDOES);
-    screens_clear_wave_banner();
+    screens_clear_banner();
     sky_refresh();
 
     while (g_wave_size > 0)
     {
+        if (controls_pause_pushed()) flow_pause();
         controls_update();
         Halt();                    // wait for vblank
         sprites_flush();           // SAT flush right after vblank (intentional)
