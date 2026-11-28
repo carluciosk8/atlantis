@@ -9,6 +9,10 @@
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/src",
+                "${workspaceFolder}/src/data",
+                "${workspaceFolder}/src/game",
+                "${workspaceFolder}/src/platform",
+                "${workspaceFolder}/src/ui",
                 "${msxgl}/engine/src",
                 "${msxgl}/engine/content",
                 "${msxgl}/tools/sdcc/include/z80",
